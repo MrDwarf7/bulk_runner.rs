@@ -6,7 +6,7 @@
 # %s/\v\{\{\s(runner_command)\s(.+)\}/\{\{ variable_name_for_runner \}\} /g
 # Can be used to replace the runner_command with the actual command to run
 
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh.exe", "-noprofile", "-NoLogo", "-Command"]
 
 runner_command := "cargo"
 
