@@ -44,7 +44,21 @@ pub struct Cli {
         default_value = "bots.sql",
         value_hint = clap::ValueHint::FilePath
     )]
-    pub sql_file: Option<PathBuf>,
+    sql_file: Option<PathBuf>,
+}
+
+impl Cli {
+    pub fn process(&self) -> &str {
+        &self.process
+    }
+
+    pub fn total_bots(&self) -> usize {
+        self.total_bots
+    }
+
+    pub fn sql_file(&self) -> &PathBuf {
+        self.sql_file.as_ref().unwrap()
+    }
 }
 
 impl Default for Cli {
@@ -55,6 +69,10 @@ impl Default for Cli {
 
 impl Cli {
     pub fn new() -> Self {
-        Self::parse()
+        let mut s = Self::parse();
+        if s.sql_file.is_none() {
+            s.sql_file = Some(PathBuf::from("bots.sql"));
+        }
+        s
     }
 }

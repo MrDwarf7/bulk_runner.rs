@@ -3,6 +3,7 @@ use deadpool_tiberius::{
     Manager, Pool,
 };
 use std::collections::HashMap;
+use tracing::{info, warn};
 
 use super::DbInfo;
 use crate::{bot_handlers::Status, prelude::*};
@@ -29,6 +30,7 @@ impl QueryEngine {
 
     pub async fn get_bot_list(&mut self, file: PathBuf) -> Result<HashMap<String, Status>> {
         let query = Self::serialize_sql_file(file)?;
+        info!("Query: {}", &query);
         let rows = self.run_query(&query).await?;
         let map = Self::generate_map(rows);
         Ok(map)
@@ -44,11 +46,13 @@ impl QueryEngine {
 
         let query = Query::new(query);
         let results = query.query(&mut con).await?.into_results().await?;
+        info!("Results: {:?}", &results);
 
         results.into_iter().flatten().for_each(|row| {
             rows.push(row);
         });
 
+        info!("Rows: {:?}", &rows);
         Ok(rows)
     }
 
@@ -57,6 +61,8 @@ impl QueryEngine {
 
         // Column 0 is the name, column 1 is the status
         for row in rows {
+            info!("For row in row -- generate_map:: QueryEngine");
+            info!("generate_map :: Row: {:?}", &row);
             let name: String = row
                 .try_get(0)
                 .unwrap_or(Some("Unknown"))
@@ -64,6 +70,7 @@ impl QueryEngine {
                 .to_string();
 
             let status_str: &str = row.get(1).unwrap_or("Unknown");
+            warn!("Status: {}", &status_str);
             let status = match status_str {
                 "Idle" => Status::Idle,
                 "Pending" => Status::Pending,
@@ -79,7 +86,9 @@ impl QueryEngine {
 
     fn serialize_sql_file(file: PathBuf) -> Result<String> {
         let file_contents = std::fs::read_to_string(file).expect("Failed to read sql file");
+        info!("RAW File contents: {}", &file_contents);
         let file_contents = file_contents.replace("\n", " ");
+        info!("After rep new lines, File contents: {}", &file_contents);
         Ok(file_contents)
     }
 }

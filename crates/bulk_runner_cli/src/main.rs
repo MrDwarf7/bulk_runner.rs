@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 /// # Bulk Runner
 ///
 /// This is the main entry point for the Bulk Runner application.
@@ -13,6 +11,7 @@ use std::path::PathBuf;
 use bulk_runner_rs::*;
 /// Re-export the `Error`, `Result`, and `W` types from the `bulk_runner_rs` crate
 pub use bulk_runner_rs::{Error, Result, W};
+use tracing::info;
 
 use bulk_runner_rs::bot_handlers::{Bot, BotOutput};
 use database::AsyncFrom;
@@ -29,45 +28,48 @@ use database::AsyncFrom;
 /// - Optional: sql_file: The path to the SQL file to pull the bots from. Defaults to "bots.sql".
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
     let cli = cli::Cli::new();
     let bot_semaphore = Arc::new(Semaphore::new(cli.total_bots));
-    let sql_file = match cli.sql_file {
-        Some(file) => file,
-        None => PathBuf::from("bots.sql"),
-    };
-    let mut ctx: Context<DbInfo> = Context::async_from(sql_file.clone()).await;
 
-    let bots: Vec<Bot> = query_database(&mut ctx, sql_file.clone()).await?;
+    let mut ctx: Context<DbInfo> = Context::async_from(cli.sql_file().clone()).await;
+
+    let bots: Vec<Bot> = query_database(&mut ctx, cli.sql_file().clone()).await?;
+    // let barrier = Arc::new(tokio::sync::Barrier::new(bots.len() + 1));
 
     let mut futures: FuturesUnordered<AutomateCFuture> = FuturesUnordered::new();
     // let (tx, mut rx) = tokio::sync::mpsc::channel(bots.len());
 
     for bot in bots {
         // let tx = tx.clone();
+        info!("Running bot: {} with {}", bot.name, &cli.process);
         let permit = bot_semaphore.clone().acquire_owned().await?;
         let cmd = AutomateCBuilder::default()
             .with_sso()
             .with_process(&cli.process)
             .with_resource(&bot.name)
             .build();
-
         let future_cmd = cmd.run().await?;
         futures.push(future_cmd);
-
         drop(permit);
-
-        // tokio::task::spawn(async move { cmd.run_async().await} }
-        // tx.send((permit, future_cmd)).await.unwrap();
     }
 
+    info!("Futures len: {}", futures.len());
+    info!("First tasks finalized. Running bots...");
+
     tokio::spawn(async move {
+        info!("Run bots inner task call...");
+        // let b = barrier.clone();
         let permit = bot_semaphore
             .clone()
             .acquire_owned()
             .await
             .map_err(|e| Error::Generic(e.to_string()));
         let _ = run_bots(&mut futures).await;
+
+        // let wait = b.wait().await;
         drop(permit);
+        // wait
     })
     .await?;
 
@@ -119,18 +121,33 @@ async fn main() -> Result<()> {
 ///
 #[allow(clippy::unused_async)]
 async fn run_bots<'a>(futures: &mut FuturesUnordered<AutomateCFuture>) -> Result<()> {
-    let mut outputs = Vec::new();
+    let mut outputs = Vec::with_capacity(futures.len());
+    let mut futures = futures.fuse();
+    let mut bot_output = BotOutput::default();
+
+    info!("Inside run_bots -- Running futures...");
+
     while let Some(result) = futures.next().await {
         match result {
-            Ok(output) => outputs.push(BotOutput::from(output)),
-            Err(e) => outputs.push(BotOutput::from(e)),
+            Ok(output) => {
+                bot_output.add_message(output.stdout.into_boxed_slice());
+                outputs.push(())
+            }
+            Err(e) => {
+                bot_output.add_message(e.to_string().into_boxed_str());
+                outputs.push(())
+            }
         };
     }
 
-    println!("Outputs:");
-    for output in outputs {
-        output.print_buffer();
-    }
+    // while let Some(result) = futures.next().await {
+    //     match result {
+    //         Ok(output) => outputs.push(BotOutput::from(output)),
+    //         Err(e) => outputs.push(BotOutput::from(e)),
+    //     };
+    // }
+
+    bot_output.print_buffer();
 
     Ok(())
 }
