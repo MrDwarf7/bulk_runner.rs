@@ -224,7 +224,7 @@ alias cl := clean
 reset:
     @echo "🧹 Resetting the project..."
     @just clean
-    @build-all
+    @just build-all
     @just doc
     @just lint
 
