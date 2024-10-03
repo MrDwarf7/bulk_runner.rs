@@ -3,6 +3,7 @@ use std::{
     process::{ExitStatus, Output},
 };
 
+
 #[derive(Debug, Default)]
 pub struct BotOutput {
     inner_buf: Vec<u8>,
@@ -33,14 +34,18 @@ impl BotOutput {
 
     /// Adds a message to the output.
     #[allow(dead_code)]
-    pub fn add_message(&mut self, message: impl AsRef<str>) {
-        self.inner_buf
-            .extend_from_slice(message.as_ref().as_bytes());
-        self.stdout.push_str(message.as_ref());
+    pub fn add_message<T>(&mut self, message: T)
+    where
+        T: Into<Box<[u8]>>,
+    {
+        self.inner_buf.extend_from_slice(&message.into());
+        // self.stdout.push_str(message.as_ref());
     }
 
     pub fn print_buffer(&self) {
-        println!("{self}");
+        let buffer = String::from_utf8_lossy(&self.inner_buf);
+
+        println!("Buffer: {}", buffer);
     }
 }
 

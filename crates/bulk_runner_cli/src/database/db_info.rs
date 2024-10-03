@@ -39,13 +39,6 @@ impl DbInfo {
     }
 }
 
-impl From<Option<&PathBuf>> for DbInfo {
-    fn from(value: Option<&PathBuf>) -> Self {
-        let file = value.unwrap_or(&PathBuf::from("")).to_path_buf();
-        DbInfo::from(file)
-    }
-}
-
 // This is the section for parsing the file and trying to pull out the host & db from the sql file, it's a TODO atm
 impl DbInfo {
     fn try_parse_file(file: PathBuf) -> Result<Self> {
@@ -92,27 +85,6 @@ impl DbInfo {
             ("", db) => Some((PROD_HOST, db)),
             (host, "") => Some((host, PROD_DB)),
             _ => Some((host, db)),
-        }
-    }
-}
-
-// This is also TODO:
-impl From<PathBuf> for DbInfo {
-    fn from(value: PathBuf) -> Self {
-        unimplemented!("This is unimplemented -- We should be pulling from the Static's set in the prelude, not from the file yet ");
-        let contents = match Self::try_parse_file(value) {
-            Ok(contents) => contents,
-            Err(_) => return DbInfo::from_static(),
-        };
-
-        let host = contents.host;
-        let db = contents.db;
-        let auth = contents.auth;
-
-        DbInfo {
-            host: host.to_string(),
-            db: db.to_string(),
-            auth,
         }
     }
 }

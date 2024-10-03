@@ -135,9 +135,9 @@ impl AutomateC {
     ///
     /// # Example
     /// ```
+    /// use internals::{AutomateCBuilder, AutomateC};
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use internals::{AutomateCBuilder, AutomateC};
     /// let automate = AutomateCBuilder::default()
     ///     .with_sso()
     ///     .with_process("AutomatedProcess")
@@ -221,7 +221,7 @@ impl Default for AutomateCBuilder {
     /// Creates a new `AutomateCBuilder` with the default path to the `AutomateC` executable.
     fn default() -> Self {
         Self::new(Some(handle_path(DEFAULT_EXE_PATH.clone()))).unwrap_or_else(|e| {
-            eprintln!("Failed to create AutomateCBuilder with default path: {e}");
+            println!("Failed to create AutomateCBuilder with default path: {e}");
             std::process::exit(1);
         })
     }
@@ -387,15 +387,7 @@ fn handle_path(path: PathBuf) -> PathBuf {
     if path.exists() && path.is_file() {
         path
     } else {
-        known
-            .parent()
-            .and_then(|parent| {
-                path.starts_with(parent)
-                    .then(|| path.strip_prefix(parent).ok())
-                    .flatten()
-            })
-            .map(|stripped| known.join(stripped.to_string_lossy().trim_end_matches('"')))
-            .unwrap_or(path)
+        known.to_path_buf()
     }
 }
 
