@@ -1,0 +1,24 @@
+[package]
+name = "bulk_runner_query"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.40.0", features = ["full", "tracing"] }
+futures = "0.3.30"
+deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
+tracing = "0.1.40"
+
+thiserror = "1.0.63"
+
+rayon = "1.10.0"
+
+bulk_runner_bots = { path = "../bulk_runner_bots" }
+
+# tracing-subscriber = { version = "0.3.18", features = [
+#     "ansi",
+#     "chrono",
+#     "env-filter",
+#     "serde",
+#     "std",
+# ] }

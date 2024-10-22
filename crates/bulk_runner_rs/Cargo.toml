@@ -1,0 +1,71 @@
+[package]
+name = "bulk_runner_rs"
+version = "2.1.0"
+edition = "2021"
+authors = ["Blake B./MrDwarf7 <129040985+MrDwarf7@users.noreply.github.com>"]
+description = "The bulk_runner_rs primary CLI/Binary application - Runs BluePrism processes in bulk via the use of the AutomateC.exe that ships with BluePrism."
+readme = "README.md"
+# license = ""
+exclude = ["target"]
+
+[dependencies]
+tokio = { version = "1.40.0", features = ["full", "tracing"] }
+futures = "0.3.30"
+tracing = "0.1.40"
+deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
+
+rayon = "1.10.0"
+
+clap = { version = "4.5.18", features = ["derive", "env"] }
+chrono = "0.4.38"
+
+thiserror = "1.0.63"
+
+tracing-subscriber = { version = "0.3.18", features = [
+    "ansi",
+    "chrono",
+    "env-filter",
+    "serde",
+    "std",
+] }
+async-trait = "0.1.82"
+# dashmap = { version = "6.1.0", features = ["serde", "rayon"] }
+
+bulk_runner_bots = { path = "../bulk_runner_bots" }
+bulk_runner_query = { path = "../bulk_runner_query" }
+
+# crossterm = { version = "0.28.1", features = ["serde"] }
+# itertools = "0.13.0"
+# serde = { version = "1.0.210", features = ["derive"] }
+# Helpers
+# async-trait = "0.1.80"
+# dotenv_codegen = "0.15.0"
+# dotenv = "0.15.0"
+# static-toml = "1.2.0"
+
+# Utilities - Try and remove/code out
+# walkdir = "2.5.0"
+# chrono = "0.4.9"
+# itertools = "0.13.0"
+
+[profile.dev.package."*"]
+opt-level = 3
+codegen-units = 1
+
+# [profile.dev]
+# codegen-backend = "cranelift"
+
+[profile.dev]
+opt-level = 1
+codegen-units = 256
+incremental = true
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+debug = "none"
+debug-assertions = false
+incremental = true
+# strip = "symbols" # Leave off @ w
+# lto = "fat" ## Can't use with cranelift yet
+# panic = "unwind"
