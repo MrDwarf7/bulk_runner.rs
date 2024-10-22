@@ -12,6 +12,8 @@ data/*.xlsm
 #
 #scratch/
 
+old/
+
 *.sql
 
 env*
