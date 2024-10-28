@@ -50,3 +50,15 @@ impl TimeKeeper {
         info!("->> {:<12} - {:?}", "TIME:: Started at", dt);
     }
 }
+
+impl Default for TimeKeeper {
+    fn default() -> Self {
+        let datetime = Local::now();
+        let time = Time {
+            start: tokio::time::Instant::now(),
+            elapsed: tokio::time::Duration::default(),
+        };
+
+        TimeKeeper { datetime, time }
+    }
+}

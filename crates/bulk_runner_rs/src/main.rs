@@ -4,7 +4,7 @@ pub use bulk_runner_rs::{Error, Result, W};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let time = TimeKeeper::new();
+    let time = TimeKeeper::default();
     let cli = cli::Cli::new().check_automate_exists()?;
     init_logger(cli.verbosity_level().into()).init();
 
@@ -32,5 +32,5 @@ fn init_logger(level: tracing_subscriber::filter::EnvFilter) -> TracingSubscribe
         .with_thread_ids(true)
         .with_env_filter(level)
         .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
-        .with_timer(tracing_subscriber::fmt::time::SystemTime::default())
+        .with_timer(tracing_subscriber::fmt::time::SystemTime)
 }
