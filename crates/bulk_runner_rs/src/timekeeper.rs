@@ -40,8 +40,13 @@ impl TimeKeeper {
 
     // Need to format this better cos it's insanely difficult to read as it's in tz style
     pub fn print_started_at(&self) {
-        let dt = self.datetime();
-        dt.format("%Y-%m-%d || %H:%M:%S").to_string();
+        // let dt = self.datetime();
+        let dt = self
+            .datetime()
+            .fixed_offset()
+            .format("%Y-%m-%d || %H:%M:%S")
+            .to_string();
+        // dt.format("%Y-%m-%d || %H:%M:%S").to_string();
         info!("->> {:<12} - {:?}", "TIME:: Started at", dt);
     }
 }

@@ -24,6 +24,12 @@ pub use self::prelude::{Error, Result, W};
 
 pub use self::runner::Runner;
 
+pub type TracingSubscriber = tracing_subscriber::fmt::SubscriberBuilder<
+    tracing_subscriber::fmt::format::DefaultFields,
+    tracing_subscriber::fmt::format::Format<tracing_subscriber::fmt::format::Full>,
+    tracing_subscriber::EnvFilter,
+>;
+
 // pub use bulk_runner_internals as internals;
 // pub use internals::{AutomateCBuilder, AutomateCFuture};
 
