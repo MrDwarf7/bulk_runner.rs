@@ -62,7 +62,7 @@ pub async fn cli_dispatch(
                     let process_name: &str = &process_name;
                     let commander = crate::command_builder::AutomateBuilderBase::default()
                         .with_sso()
-                        .with_process(&process_name)
+                        .with_process(process_name)
                         .with_resource(&bot.name)
                         .build();
 
