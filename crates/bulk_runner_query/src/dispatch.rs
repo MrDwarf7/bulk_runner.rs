@@ -1,31 +1,35 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use tokio::task::JoinHandle;
-
+use crate::query_engine::QueryEngine;
 use crate::{error, info, Result};
 
-use crate::query_engine::QueryEngine;
-// use crate::prelude::*;
 use bulk_runner_bots::{BaseBot, Bot};
-use tokio::sync::mpsc::UnboundedSender;
 
-// use dashmap::DashMap as HashMap;
+use tokio::sync::mpsc::UnboundedSender;
+use tokio::task::JoinHandle;
 
 pub async fn query_database(tx: UnboundedSender<Bot>, parsed_sql_file: impl AsRef<str>) {
     let mut base_bots: Vec<BaseBot> = QueryEngine::default()
         .get_bots(parsed_sql_file)
         .await
         .unwrap();
-
-    info!("->> {:<12} - {:?}", "QUERY:: base_bots", base_bots);
-
     // TODO: STREAM: We can stream these instead of iterating over them
     while let Some(base_bot) = base_bots.pop() {
         let filled_bot: Bot = Bot::from(base_bot);
-        info!("->> {:<12} - {:?}", "QUERY:: Filled bot", filled_bot);
+        match filled_bot.status {
+            bulk_runner_bots::BotStatus::Ready(ref status) => {
+                info!("{:<12} - {:?}", "QUERY:: Ready bot", status);
+                tx.send(filled_bot).unwrap();
+            }
+            bulk_runner_bots::BotStatus::NotReady(status) => {
+                info!("{:<12} - {:?}", "QUERY:: Not ready bot", status);
+                continue;
+            }
+        }
 
-        tx.send(filled_bot).unwrap();
+        // info!("{:<12} - {:?}", "QUERY:: Filled bot", filled_bot);
+        // tx.send(filled_bot).unwrap();
     }
     drop(tx);
 }
@@ -41,6 +45,8 @@ pub async fn cli_dispatch(
 
     let local = tokio::task::LocalSet::new();
 
+    // let mut js = tokio::task::JoinSet::new();
+
     let handles = dispatch_bots
         .make_contiguous()
         .iter_mut() // .into_iter()
@@ -50,10 +56,8 @@ pub async fn cli_dispatch(
             let process_name = process_name.clone();
 
             let handle: JoinHandle<Result<()>> = local.spawn_local(async move {
-                // warn!("OUTER:: Spawn local called: {:?}", process_name);
-
                 match tokio::task::spawn_local(async move {
-                    info!("INNER:: Spawn local called for: {:}", &process_name);
+                    info!("INNER:: Spawn local: {:}", &process_name);
                     let permit = sempahore.acquire_owned().await.unwrap();
                     let process_name: &str = &process_name;
                     let commander = crate::command_builder::AutomateBuilderBase::default()
@@ -63,9 +67,9 @@ pub async fn cli_dispatch(
                         .build();
 
                     let res = bot.dispatch(commander.into()).await;
+                    tokio::task::yield_now().await;
                     check_err(res).await;
                     drop(permit);
-                    tokio::task::yield_now().await;
                 })
                 .await
                 {

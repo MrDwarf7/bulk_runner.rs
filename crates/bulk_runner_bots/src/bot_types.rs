@@ -4,6 +4,7 @@ use crate::base_bot::BaseBot;
 pub enum BotStatusReady {
     Idle,
     Pending,
+    LoggedOut,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -25,6 +26,7 @@ impl From<BotStatus> for String {
             BotStatus::Ready(status) => match status {
                 BotStatusReady::Idle => "IDLE".to_string().to_uppercase(),
                 BotStatusReady::Pending => "PENDING".to_string(),
+                BotStatusReady::LoggedOut => "LOGGED OUT".to_string(),
             },
             BotStatus::NotReady(status) => match status {
                 BotStatusNotReady::Offline => "OFFLINE".to_string(),
@@ -43,6 +45,7 @@ impl From<String> for BotStatus {
             "OFFLINE" => BotStatus::NotReady(BotStatusNotReady::Offline),
             "PRIVATE" => BotStatus::NotReady(BotStatusNotReady::Private),
             "UNAVAILABLE" => BotStatus::NotReady(BotStatusNotReady::Unavailable),
+            "LOGGED OUT" => BotStatus::Ready(BotStatusReady::LoggedOut),
             _ => BotStatus::NotReady(BotStatusNotReady::Offline),
         }
     }

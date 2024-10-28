@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::future::IntoFuture;
 use std::process::Output;
 
 use deadpool_tiberius::tiberius::Row;
@@ -26,7 +27,7 @@ impl Bot {
 
         // check_handle(handles, &name).await;
         #[rustfmt::skip]
-        info!("->> {:<12} - {}", "DISPATCH:: Child process ", "spawned successfully - waiting for output");
+        info!("{:<12} - {}", "DISPATCH:: Child process ", "spawned successfully - waiting for output");
 
         let after = rx.await.unwrap();
         check_status(after, &self.name);
@@ -38,11 +39,22 @@ impl Bot {
         &self.name
     }
 
-    pub fn if_available(&self) -> Option<Self> {
+    pub fn is_logged_out(&self) -> bool {
+        match &self.status {
+            BotStatus::Ready(ready) => match ready {
+                BotStatusReady::LoggedOut => true,
+                _ => false,
+            },
+            BotStatus::NotReady(_) => false,
+        }
+    }
+
+    pub fn is_available(&self) -> Option<Bot> {
         match &self.status {
             BotStatus::Ready(ready) => match ready {
                 BotStatusReady::Idle => Some(self.clone()),
                 BotStatusReady::Pending => None,
+                BotStatusReady::LoggedOut => Some(self.clone()),
             },
             BotStatus::NotReady(not_ready) => match not_ready {
                 BotStatusNotReady::Offline => None,
@@ -81,7 +93,7 @@ async fn spawn_child_proc(
 
     #[rustfmt::skip]
     debug!("->> {:<12} - {:?}", "DISPATCH:: Commander", &commander);
-    info!("->> {:<12}", "DISPATCH:: Commander");
+    info!("{:<12}", "DISPATCH:: Child proc");
 
     //     let handles =
     // check_handle(
@@ -101,7 +113,8 @@ async fn spawn_child_proc(
     // )
     // .await;
     // check_handle(handles, &name).await;
-    handle
+
+    handle.into_future()
 }
 
 async fn wait_on_child_proc(
@@ -170,7 +183,7 @@ impl From<BaseBot> for Bot {
 
         let status: BotStatus = match base_bot.status {
             Some(status) => status.into(),
-            None => BotStatus::NotReady(BotStatusNotReady::Offline),
+            None => BotStatus::NotReady(BotStatusNotReady::Unavailable),
         };
 
         Bot { name, status }
