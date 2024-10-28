@@ -1,3 +1,26 @@
 [workspace]
 members = ["crates/bulk_runner_rs", "crates/bulk_runner_bots", "crates/bulk_runner_query"]
 resolver = "2"
+
+[profile.dev.package."*"]
+opt-level = 3
+codegen-units = 1
+
+# [profile.dev]
+# codegen-backend = "cranelift"
+
+[profile.dev]
+opt-level = 1
+codegen-units = 256
+incremental = true
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+debug = "none"
+debug-assertions = false
+incremental = true
+
+# strip = "symbols" # Leave off @ w
+# lto = "fat" ## Can't use with cranelift yet
+# panic = "unwind"

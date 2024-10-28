@@ -14,11 +14,3 @@ thiserror = "1.0.63"
 rayon = "1.10.0"
 
 bulk_runner_bots = { path = "../bulk_runner_bots" }
-
-# tracing-subscriber = { version = "0.3.18", features = [
-#     "ansi",
-#     "chrono",
-#     "env-filter",
-#     "serde",
-#     "std",
-# ] }

@@ -11,12 +11,4 @@ deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
 
 thiserror = "1.0.63"
 
-# tracing-subscriber = { version = "0.3.18", features = [
-#     "ansi",
-#     "chrono",
-#     "env-filter",
-#     "serde",
-#     "std",
-# ] }
-
 # bulk_runner_query = { path = "../bulk_runner_query" }

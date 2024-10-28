@@ -187,6 +187,7 @@ dependencies = [
 name = "bulk_runner_rs"
 version = "2.1.0"
 dependencies = [
+ "anstyle",
  "async-trait",
  "bulk_runner_bots",
  "bulk_runner_query",
