@@ -41,10 +41,7 @@ impl Bot {
 
     pub fn is_logged_out(&self) -> bool {
         match &self.status {
-            BotStatus::Ready(ready) => match ready {
-                BotStatusReady::LoggedOut => true,
-                _ => false,
-            },
+            BotStatus::Ready(ready) => matches!(ready, BotStatusReady::LoggedOut),
             BotStatus::NotReady(_) => false,
         }
     }
