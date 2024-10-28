@@ -103,7 +103,9 @@ async fn spawn_child_proc(
             .spawn()
             .map_err(crate::error::Error::from)
             .expect("Failed to spawn");
-        wait_on_child_proc(future_output, tx_stop).await
+        let h = wait_on_child_proc(future_output, tx_stop);
+        tokio::task::yield_now().await; // Yield because there's nothing else to do while automatec.exe runs
+        h.await;
     });
 
     // &name,
@@ -123,6 +125,7 @@ async fn wait_on_child_proc(
             .wait_with_output()
             .await
             .expect("Failed to wait on child");
+        tokio::task::yield_now().await;
         tx_stop.send(output).unwrap();
     });
     // We don't have to await right?
