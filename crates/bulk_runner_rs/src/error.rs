@@ -3,6 +3,9 @@ pub enum Error {
     #[error("Generic error handler: {0}")]
     Generic(String),
 
+    #[error("The AutomateC binary that is required to run this application couldn't be found!")]
+    AutomateCNotFound,
+
     // #[error("AutomateC error: {0}")]
     // AutomateC(#[from] crate::internals::Error),
     //
