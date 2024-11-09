@@ -153,8 +153,8 @@ pub struct BaseBot {
     pub(crate) status: Option<String>,
 }
 
-impl From<&mut Row> for BaseBot {
-    fn from(row: &mut Row) -> Self {
+impl From<&Row> for BaseBot {
+    fn from(row: &Row) -> Self {
         let name: String = row
             .try_get(0)
             .unwrap_or(Some("FailedToGet"))

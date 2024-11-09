@@ -11,7 +11,7 @@ use tokio::task::JoinHandle;
 
 pub async fn query_database(tx: UnboundedSender<Bot>, parsed_sql_file: impl AsRef<str>) {
     let mut base_bots: Vec<BaseBot> = QueryEngine::default()
-        .get_bots(parsed_sql_file)
+        .get_bots(parsed_sql_file.as_ref())
         .await
         .unwrap();
     // TODO: STREAM: We can stream these instead of iterating over them

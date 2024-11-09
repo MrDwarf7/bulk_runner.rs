@@ -2,7 +2,7 @@ use deadpool_tiberius::{
     tiberius::{Query, Row},
     Manager, Pool,
 };
-use rayon::prelude::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::db_info::DbInfo;
 use crate::Result;
@@ -38,16 +38,35 @@ impl QueryEngine {
         Ok(Self { pool })
     }
 
-    pub async fn get_bots(&mut self, parsed_file: impl AsRef<str>) -> Result<Vec<BaseBot>> {
+    pub async fn get_bots<S>(&self, parsed_file: S) -> Result<Vec<BaseBot>>
+    where
+        S: AsRef<str> + Send + Sync,
+    {
         Ok(self
-            .run_query(parsed_file)
+            .query(parsed_file.as_ref())
             .await?
-            .par_iter_mut()
+            .par_iter()
             .map(BaseBot::from)
             .collect::<Vec<BaseBot>>())
     }
 
-    async fn run_query(&mut self, query: impl AsRef<str>) -> Result<Vec<Row>> {
+    // Add pub methods here to access the run_query method
+    // returned data will likely need to impl From<Row> for YourStruct
+}
+
+#[async_trait::async_trait]
+pub trait Queryable {
+    async fn query<S>(&self, query: S) -> Result<Vec<Row>>
+    where
+        S: AsRef<str> + Send + Sync;
+}
+
+#[async_trait::async_trait]
+impl Queryable for QueryEngine {
+    async fn query<S>(&self, query: S) -> Result<Vec<Row>>
+    where
+        S: AsRef<str> + Send + Sync,
+    {
         #[rustfmt::skip]
         let mut con = self.pool.get().await
             .expect("Failed to get pooled connection in run_query");
@@ -61,6 +80,22 @@ impl QueryEngine {
             .collect::<Vec<Row>>())
     }
 }
+
+// impl QueryEngine {
+//     async fn run_query(&self, query: impl AsRef<str>) -> Result<Vec<Row>> {
+//         #[rustfmt::skip]
+//         let mut con = self.pool.get().await
+//             .expect("Failed to get pooled connection in run_query");
+
+//         #[rustfmt::skip]
+//         let results = Query::new(query.as_ref()).query(&mut con).await?.into_results().await?;
+
+//         Ok(results
+//             .into_par_iter()
+//             .flat_map(|row| row)
+//             .collect::<Vec<Row>>())
+//     }
+// }
 
 impl From<DbInfo> for QueryEngine {
     fn from(value: DbInfo) -> Self {
