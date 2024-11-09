@@ -137,12 +137,12 @@ async fn check_handle(handle: tokio::task::JoinHandle<()>, name: impl AsRef<str>
     match handle.await {
         Ok(_) => info!(
             "->> {:<12} - {} - {}",
-            "DISPATCH:: OK", "Bot ran successfully!", &name
+            "CHECK:: OK", "Bot ran successfully!", &name
         ),
 
         Err(e) => error!(
             "->> {:<12} - {}: {name} - {e}",
-            "DISPATCH:: ERR", "Bot failed to run! "
+            "CHECK:: ERR", "Bot failed to run! "
         ),
     };
 }
