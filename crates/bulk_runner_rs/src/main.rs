@@ -4,7 +4,7 @@ pub use bulk_runner_rs::{Error, Result, W};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let time = TimeKeeper::default();
+    let timekeep = TimeKeeper::default();
     let cli = cli::Cli::new().check_automate_exists()?;
     init_logger(cli.verbosity_level().into()).init();
 
@@ -18,8 +18,8 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     }
 
-    time.print_elapsed();
-    time.print_started_at();
+    timekeep.print_elapsed();
+    timekeep.print_started_at();
 
     Ok(())
 }
@@ -31,6 +31,6 @@ fn init_logger(level: tracing_subscriber::filter::EnvFilter) -> TracingSubscribe
         .with_line_number(true)
         .with_thread_ids(true)
         .with_env_filter(level)
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
-        .with_timer(tracing_subscriber::fmt::time::SystemTime)
+    // .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
+    // .with_timer(tracing_subscriber::fmt::time::SystemTime)
 }

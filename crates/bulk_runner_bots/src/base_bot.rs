@@ -207,6 +207,8 @@ impl W<Vec<Bot>> {
     }
 }
 
+// FIX: Pretty sure this has the potential to hang indefinitely. If we poll free bots - and the supplied query doesn't cull out
+// bots that are occupied, we'll just hang here forever.
 impl futures::Stream for Bot {
     type Item = Bot;
 

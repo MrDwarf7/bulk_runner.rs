@@ -70,7 +70,7 @@ impl Runner {
             .collect();
 
         let mut dispatch_bots: VecDeque<(Bot, String)> = VecDeque::with_capacity(filled_bots.len());
-        // NOTE: Not the prettiest way of solving this but...
+        // HACK: Not the prettiest way of solving this but...
         filled_bots.drain(..).for_each(|mut bot| {
             info!("->> {:<12} - {:?}", "RUN:: Filled bot", &bot);
             if bot.is_logged_out() {
