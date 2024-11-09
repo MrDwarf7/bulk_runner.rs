@@ -32,18 +32,31 @@ args = ["test"]
 command = "cargo"
 args = ["test", "--all"]
 
-
 [tasks.run]
 command = "cargo"
 args = ["run"]
-
 
 [tasks.run_release]
 command = "cargo"
 args = ["run", "--release"]
 
-## Full sweeps
+#### Workspace specific(s)
 
+[tasks.build_workspace]
+command = "cargo"
+args = ["build", "--workspace"]
+dependencies = ["format"]
+
+[tasks.build_release_workspace]
+command = "cargo"
+args = ["build", "--release", "--workspace"]
+dependencies = ["format"]
+
+[tasks.test_workspace]
+command = "cargo"
+args = ["test", "--workspace"]
+
+## Full sweeps
 [tasks.b]
 run_task = { name = ["format", "build"], parallel = true }
 
@@ -59,11 +72,15 @@ run_task = { name = ["run"], parallel = false }
 [tasks.rr]
 run_task = { name = ["run_release"], parallel = false }
 
+[tasks.bw]
+run_task = { name = ["build_workspace"], parallel = true }
+
+[tasks.brw]
+run_task = { name = ["build_release_workspace"], parallel = true }
+
 [tasks.reset]
 run_task = { name = ["clean", "a"], parallel = false }
 dependencies = ["clean"]
 
-
 # , fork = true, cleanup = "clean" 
 # , parallel = true, fork = true, cleanup = "clean"
-

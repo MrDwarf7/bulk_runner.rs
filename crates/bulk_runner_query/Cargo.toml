@@ -4,13 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.40.0", features = ["full", "tracing"] }
-futures = "0.3.30"
-deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
-tracing = "0.1.40"
-
-thiserror = "1.0.63"
+# Core dependencies
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
 
 rayon = "1.10.0"
 
+## Workspace-core dependencies
 bulk_runner_bots = { path = "../bulk_runner_bots" }
+
+# Logging
+tracing = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Database
+deadpool-tiberius = { workspace = true }

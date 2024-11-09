@@ -9,17 +9,18 @@ readme = "README.md"
 exclude = ["target"]
 
 [dependencies]
-tokio = { version = "1.40.0", features = ["full", "tracing"] }
-futures = "0.3.30"
-tracing = "0.1.40"
-deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
-
+# Core dependencies
+tokio = { workspace = true }
+futures = { workspace = true }
 rayon = "1.10.0"
+async-trait = "0.1.83"
 
-clap = { version = "4.5.18", features = ["derive", "env"] }
-chrono = "0.4.38"
+## Workspace-core dependencies
+bulk_runner_bots = { path = "../bulk_runner_bots" }
+bulk_runner_query = { path = "../bulk_runner_query" }
 
-thiserror = "1.0.63"
+# Logging
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = [
     "ansi",
     "chrono",
@@ -27,13 +28,17 @@ tracing-subscriber = { version = "0.3.18", features = [
     "serde",
     "std",
 ] }
-async-trait = "0.1.82"
-# dashmap = { version = "6.1.0", features = ["serde", "rayon"] }
 
+# Error handling
+thiserror = { workspace = true }
+
+# Database
+deadpool-tiberius = { workspace = true }
+chrono = "0.4.38"
+
+# Interactions
+clap = { version = "4.5.18", features = ["derive", "env"] }
 anstyle = "1.0.8"
-
-bulk_runner_bots = { path = "../bulk_runner_bots" }
-bulk_runner_query = { path = "../bulk_runner_query" }
 
 # Define profiles at top-level for workspace
 # [profile.dev.package."*"]
