@@ -1,9 +1,8 @@
 use std::fmt::Display;
-use std::future::IntoFuture;
 use std::process::Output;
 
 use deadpool_tiberius::tiberius::Row;
-use tokio::process::{Child, Command};
+use tokio::process::Command;
 
 use crate::bot_types::{BotStatus, BotStatusNotReady, BotStatusReady};
 use crate::{debug, error, info, Result, W};
@@ -17,20 +16,17 @@ pub struct Bot {
 
 impl Bot {
     pub async fn dispatch(&self, commander: Vec<String>) -> Result<()> {
-        let (tx_stop, rx) = tokio::sync::oneshot::channel();
+        let (tx_stop, rx_stop) = tokio::sync::oneshot::channel();
 
         let cmd = Command::new(&*crate::DEFAULT_EXE_PATH);
 
-        // NOTE: We now hand through the proces name & the bot name ✔
-        let handle = spawn_child_proc(tx_stop, cmd, commander).await;
-        check_handle(handle, &self.name).await;
+        spawn_child_proc(tx_stop, cmd, commander).await;
 
-        // check_handle(handles, &name).await;
         #[rustfmt::skip]
         info!("{:<12} - {}", "DISPATCH:: Child process ", "spawned successfully - waiting for output");
 
-        let after = rx.await.unwrap();
-        check_status(after, &self.name);
+        let after = rx_stop.await.unwrap();
+        CheckStatus::from(after).check_status(&self.name);
 
         Ok(())
     }
@@ -62,87 +58,68 @@ impl Bot {
     }
 }
 
-fn check_status(output: Output, name: impl AsRef<str> + Display) {
-    match output.status.success() {
-        true => info!(
-            "->> {:<12} - {} - {name}",
-            "DISPATCH:: OK", "Bot ran successfully!"
-        ),
+enum CheckStatus {
+    Success(Output),
+    Fail(Output),
+}
 
-        false => error!(
-            "->> {:<12} - {}: {name} - {output:?}",
-            "DISPATCH:: ERR", "Bot failed to run! "
-        ),
-    };
+impl From<Output> for CheckStatus {
+    fn from(output: Output) -> Self {
+        match output.status.success() {
+            true => CheckStatus::Success(output),
+            false => CheckStatus::Fail(output),
+        }
+    }
+}
+
+impl CheckStatus {
+    fn check_status(&self, name: impl AsRef<str> + Display) {
+        match self {
+            CheckStatus::Success(output) => info!(
+                "->> {:<12} - {}: {name} - with output: {}",
+                "DISPATCH:: OK", "Job is now running on", output.status
+            ),
+            CheckStatus::Fail(output) => error!(
+                "->> {:<12} - {}: {name} - {output:?}",
+                "DISPATCH:: ERR", "Job has failed to start running on"
+            ),
+        };
+    }
 }
 
 async fn spawn_child_proc(
     tx_stop: tokio::sync::oneshot::Sender<std::process::Output>,
     mut cmd: Command,
     commander: Vec<String>,
-) -> tokio::task::JoinHandle<()> {
-    // let cmd = Command::new(&*crate::prelude::DEFAULT_EXE_PATH);
-    // let commander = bulk_runner_query::AutomateBuilderBase::default()
-    //     .with_sso()
-    //     .with_process(process_name)
-    //     .with_resource(&name)
-    //     .build();
-
+) {
     #[rustfmt::skip]
     debug!("->> {:<12} - {:?}", "DISPATCH:: Commander", &commander);
     info!("{:<12}", "DISPATCH:: Child proc");
 
-    //     let handles =
-    // check_handle(
-    let handle = tokio::spawn(async move {
-        // let mut cmd = cmd;
-        info!("->> {:<12} - {}", "DISPATCH:: Spawned", "child process");
+    let cmd_for_print = commander.clone();
 
-        cmd.args(commander);
-        let future_output = cmd
-            .spawn()
-            .map_err(crate::error::Error::from)
-            .expect("Failed to spawn");
-        let h = wait_on_child_proc(future_output, tx_stop);
-        tokio::task::yield_now().await; // Yield because there's nothing else to do while automatec.exe runs
-        h.await;
-    });
+    match tokio::spawn(async move {
+        let output = tokio::task::spawn_blocking(move || {
+            info!("->> {:<12} - {}", "DISPATCH:: Spawned", "Child Proc");
+            cmd.args(commander.clone())
+                .spawn()
+                .map_err(crate::error::Error::from)
+                .expect("Failed to spawn")
+                .wait_with_output()
+        })
+        .await
+        .unwrap()
+        .await
+        .expect("Failed to wait on child");
 
-    // &name,
-    // )
-    // .await;
-    // check_handle(handles, &name).await;
-
-    handle.into_future()
-}
-
-async fn wait_on_child_proc(
-    child: Child,
-    tx_stop: tokio::sync::oneshot::Sender<std::process::Output>,
-) {
-    tokio::spawn(async move {
-        let output = child
-            .wait_with_output()
-            .await
-            .expect("Failed to wait on child");
-        tokio::task::yield_now().await;
         tx_stop.send(output).unwrap();
-    });
-    // We don't have to await right?
-    //     .await
-    //     .unwrap_or_default();
-}
-
-async fn check_handle(handle: tokio::task::JoinHandle<()>, name: impl AsRef<str> + Display) {
-    match handle.await {
-        Ok(_) => info!(
-            "->> {:<12} - {} - {}",
-            "CHECK:: OK", "Bot ran successfully!", &name
-        ),
-
+    })
+    .await
+    {
+        Ok(_) => info!("->> {:<12} - {}", "DISPATCH:: OK", "Task dispatched!"),
         Err(e) => error!(
-            "->> {:<12} - {}: {name} - {e}",
-            "CHECK:: ERR", "Bot failed to run! "
+            "->> {:<12} - Tried to run {cmd_for_print:?} - {e}",
+            "DISPATCH:: ERR",
         ),
     };
 }

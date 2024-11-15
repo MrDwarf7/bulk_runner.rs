@@ -13,7 +13,7 @@ pub use crate::bot_types::{BotStatus, BotStatusNotReady, BotStatusReady};
 pub use crate::bot_output::BotOutput;
 
 pub use crate::error::Error;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub struct W<T>(pub T);
