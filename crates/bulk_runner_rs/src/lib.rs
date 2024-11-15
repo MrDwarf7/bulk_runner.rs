@@ -9,23 +9,20 @@ pub mod packets;
 pub mod prelude;
 pub mod runner;
 
-pub use futures::{stream::FuturesUnordered, StreamExt};
 pub use std::sync::Arc;
-pub use tokio::sync::Semaphore;
 
+pub use futures::stream::FuturesUnordered;
+pub use futures::StreamExt;
+pub use tokio::sync::Semaphore;
 pub use tracing::{debug, error, info, warn};
 
-pub use crate::timekeeper::TimeKeeper;
-
+use self::packets::{Dispatchable, Packet};
 // use bulk_runner_bots::{BaseBot, Bot};
 
 // use bulk_runner_query::{AutomateBuilderBase, AutomateBuilderBaseExt};
-
 pub use self::prelude::{Error, Result, W};
-
 pub use self::runner::Runner;
-
-use self::packets::{Dispatchable, Packet};
+pub use crate::timekeeper::TimeKeeper;
 
 pub type TracingSubscriber = tracing_subscriber::fmt::SubscriberBuilder<
     tracing_subscriber::fmt::format::DefaultFields,

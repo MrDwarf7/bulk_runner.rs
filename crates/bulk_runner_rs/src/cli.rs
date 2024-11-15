@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
-use crate::Result;
 use clap::{command, Parser, ValueEnum};
 
 use crate::prelude::*;
+use crate::Result;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -29,8 +29,8 @@ pub struct Cli {
     pub concurrency_limit: usize,
 
     /// The total number of bots of which the process will be dispatched for.
-    #[arg(short = 't', long = "total_run_on", default_value = "30", value_hint = clap::ValueHint::Other, long_help = "The total number of bots of which the process will be dispatched for.")]
-    pub total_run_on: usize,
+    #[arg(short = 'l', long = "limit_total_runnable", default_value = "30", value_hint = clap::ValueHint::Other, long_help = "The total number of bots of which the process will be dispatched for.")]
+    pub limit_total_runnable: usize,
 
     /// Optional path to a SQL file to pull the bots from.
     /// If not provided, the default value is "bots.sql".
@@ -45,7 +45,7 @@ pub struct Cli {
     /// The least verbose as 0 (Error -> Error Only)
     /// Most verbose as 4 (Trace -> Trace Everything
     /// If not provided, the default value is "INFO".
-    #[arg(value_enum, name = "verbosity", short = 'l', long = "level", help = "The verbosity level of the logger.", required = false, default_value = "INFO", value_hint = clap::ValueHint::Other)]
+    #[arg(value_enum, name = "verbosity", short = 'v', long = "verbosity", help = "The verbosity level of the logger.", required = false, default_value = "INFO", value_hint = clap::ValueHint::Other)]
     pub verbosity_level: Option<VerbosityLevel>,
 
     /// Optional span level of the logger.
@@ -109,39 +109,32 @@ impl Cli {
     /// There is a bypass for this check, which can be set by setting the environment variable BYPASS_AUTOMATEC_CHECK.
     ///
     /// This is useful for testing purposes.
+    #[inline]
     pub fn new() -> Self {
-        // match check_automate_exists() {
-        //     Ok(_) => (),
-        //     Err(e) => {
-        //         error!("Tracing Error: {}", e);
-        //         eprintln!("Error: {}", e);
-        //         std::process::exit(1);
-        //     }
-        // }
         Self::parse()
-
-        // let mut s = Self::parse();
-        // if s.sql_file.is_none() {
-        //     s.sql_file = Some(PathBuf::from("bots.sql"));
-        // }
-        // s
     }
+
+    #[inline]
     pub fn process(&self) -> &str {
         &self.process
     }
 
+    #[inline]
     pub fn concurrency_limit(&self) -> usize {
         self.concurrency_limit
     }
 
-    pub fn total_run_on(&self) -> usize {
-        self.total_run_on
+    #[inline]
+    pub fn limit_total_runnable(&self) -> usize {
+        self.limit_total_runnable
     }
 
+    #[inline]
     pub fn sql_file(&self) -> &PathBuf {
         self.sql_file.as_ref().unwrap()
     }
 
+    #[inline]
     pub fn verbosity_level(&self) -> VerbosityLevel {
         self.verbosity_level.unwrap_or(VerbosityLevel::Info)
     }
@@ -155,6 +148,7 @@ impl Cli {
         Ok(sql_file_query)
     }
 
+    #[inline]
     pub fn check_automate_exists(self) -> Result<Self> {
         if std::env::var("BYPASS_AUTOMATEC_CHECK").is_ok() {
             return Ok(self);
@@ -168,6 +162,7 @@ impl Cli {
 }
 
 impl From<VerbosityLevel> for tracing_subscriber::filter::EnvFilter {
+    #[inline]
     fn from(level: VerbosityLevel) -> Self {
         match level {
             VerbosityLevel::Error => tracing_subscriber::filter::EnvFilter::new("ERROR"),
@@ -180,6 +175,7 @@ impl From<VerbosityLevel> for tracing_subscriber::filter::EnvFilter {
 }
 
 impl From<u8> for VerbosityLevel {
+    #[inline]
     fn from(level: u8) -> Self {
         match level {
             0 => VerbosityLevel::Error,
@@ -195,6 +191,7 @@ impl From<u8> for VerbosityLevel {
 impl FromStr for VerbosityLevel {
     type Err = Error;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self> {
         match s.to_uppercase().as_str() {
             "ERROR" => Ok(VerbosityLevel::Error),
@@ -202,15 +199,13 @@ impl FromStr for VerbosityLevel {
             "INFO" => Ok(VerbosityLevel::Info),
             "DEBUG" => Ok(VerbosityLevel::Debug),
             "TRACE" => Ok(VerbosityLevel::Trace),
-            _ => Err(Error::Generic(format!(
-                "Verbosity level: {} is not supported.",
-                s
-            ))),
+            _ => Err(Error::Generic(format!("Verbosity level: {} is not supported.", s))),
         }
     }
 }
 
 impl From<SpanType> for tracing_subscriber::filter::EnvFilter {
+    #[inline]
     fn from(level: SpanType) -> Self {
         match level {
             SpanType::None => tracing_subscriber::filter::EnvFilter::new("NONE"),
@@ -222,6 +217,7 @@ impl From<SpanType> for tracing_subscriber::filter::EnvFilter {
 }
 
 impl From<u8> for SpanType {
+    #[inline]
     fn from(level: u8) -> Self {
         match level {
             0 => SpanType::None,
@@ -236,16 +232,14 @@ impl From<u8> for SpanType {
 impl FromStr for SpanType {
     type Err = Error;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self> {
         match s.to_uppercase().as_str() {
             "NONE" => Ok(SpanType::None),
             "ENTER" => Ok(SpanType::Enter),
             "EXIT" => Ok(SpanType::Exit),
             "FULL" => Ok(SpanType::Full),
-            _ => Err(Error::Generic(format!(
-                "Span type: {} is not supported.",
-                s
-            ))),
+            _ => Err(Error::Generic(format!("Span type: {} is not supported.", s))),
         }
     }
 }
@@ -265,8 +259,7 @@ pub fn get_styles() -> clap::builder::Styles {
                 .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Blue))), // Main headers in the help menu (e.g. Arguments, Options)
         )
         .literal(
-            anstyle::Style::new()
-                .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::BrightWhite))), // Strings for args etc { -t, --total }
+            anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::BrightWhite))), // Strings for args etc { -t, --total }
         )
         .invalid(
             anstyle::Style::new()
@@ -284,7 +277,5 @@ pub fn get_styles() -> clap::builder::Styles {
                 .bold()
                 .fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))),
         )
-        .placeholder(
-            anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::White))),
-        )
+        .placeholder(anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::White))))
 }

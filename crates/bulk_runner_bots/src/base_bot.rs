@@ -1,12 +1,6 @@
-use std::fmt::Display;
-use std::process::Output;
-
 use deadpool_tiberius::tiberius::Row;
-use tokio::process::Command;
 
 use crate::bot_types::{BotStatus, BotStatusNotReady, BotStatusReady};
-use crate::{debug, error, info, Result, W};
-// use crate::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Bot {

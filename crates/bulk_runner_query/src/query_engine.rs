@@ -1,13 +1,10 @@
-use deadpool_tiberius::{
-    tiberius::{Query, Row},
-    Manager, Pool,
-};
+use bulk_runner_bots::BaseBot;
+use deadpool_tiberius::tiberius::{Query, Row};
+use deadpool_tiberius::{Manager, Pool};
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::db_info::DbInfo;
 use crate::Result;
-use bulk_runner_bots::BaseBot;
-// use crate::{BaseBot, Result};
 
 pub struct QueryEngine {
     pub(crate) pool: Pool,
@@ -38,12 +35,12 @@ impl QueryEngine {
         Ok(Self { pool })
     }
 
-    pub async fn get_bots<S>(&self, parsed_file: S, total_run_on: u8) -> Result<Vec<BaseBot>>
+    pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: u8) -> Result<Vec<BaseBot>>
     where
         S: AsRef<str> + Send + Sync,
     {
         Ok(self
-            .query(parsed_file.as_ref(), total_run_on)
+            .query(parsed_file.as_ref(), limit_total_runnable)
             .await?
             .par_iter()
             .map(BaseBot::from)
@@ -63,42 +60,21 @@ pub trait Queryable {
 
 #[async_trait::async_trait]
 impl Queryable for QueryEngine {
-    async fn query<S>(&self, query: S, total_run_on: u8) -> Result<Vec<Row>>
+    async fn query<S>(&self, query: S, limit_total_runnable: u8) -> Result<Vec<Row>>
     where
         S: AsRef<str> + Send + Sync,
     {
         #[rustfmt::skip]
-        let mut con = self.pool.get().await
-            .expect("Failed to get pooled connection in run_query");
+        let mut con = self.pool.get().await.expect("Failed to get pooled connection in run_query");
 
-        #[rustfmt::skip]
         let mut results = Query::new(query.as_ref());
-        results.bind(total_run_on);
+        results.bind(limit_total_runnable);
 
         let results = results.query(&mut con).await?.into_results().await?;
 
-        Ok(results
-            .into_par_iter()
-            .flat_map(|row| row)
-            .collect::<Vec<Row>>())
+        Ok(results.into_par_iter().flat_map(|row| row).collect::<Vec<Row>>())
     }
 }
-
-// impl QueryEngine {
-//     async fn run_query(&self, query: impl AsRef<str>) -> Result<Vec<Row>> {
-//         #[rustfmt::skip]
-//         let mut con = self.pool.get().await
-//             .expect("Failed to get pooled connection in run_query");
-
-//         #[rustfmt::skip]
-//         let results = Query::new(query.as_ref()).query(&mut con).await?.into_results().await?;
-
-//         Ok(results
-//             .into_par_iter()
-//             .flat_map(|row| row)
-//             .collect::<Vec<Row>>())
-//     }
-// }
 
 impl From<DbInfo> for QueryEngine {
     fn from(value: DbInfo) -> Self {

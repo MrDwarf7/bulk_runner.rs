@@ -23,16 +23,20 @@ pub enum BotStatus {
 impl From<BotStatus> for String {
     fn from(status: BotStatus) -> Self {
         match status {
-            BotStatus::Ready(status) => match status {
-                BotStatusReady::Idle => "IDLE".to_string().to_uppercase(),
-                BotStatusReady::Pending => "PENDING".to_string(),
-                BotStatusReady::LoggedOut => "LOGGED OUT".to_string(),
-            },
-            BotStatus::NotReady(status) => match status {
-                BotStatusNotReady::Offline => "OFFLINE".to_string(),
-                BotStatusNotReady::Private => "PRIVATE".to_string(),
-                BotStatusNotReady::Unavailable => "UNAVAILABLE".to_string(),
-            },
+            BotStatus::Ready(status) => {
+                match status {
+                    BotStatusReady::Idle => "IDLE".to_string().to_uppercase(),
+                    BotStatusReady::Pending => "PENDING".to_string(),
+                    BotStatusReady::LoggedOut => "LOGGED OUT".to_string(),
+                }
+            }
+            BotStatus::NotReady(status) => {
+                match status {
+                    BotStatusNotReady::Offline => "OFFLINE".to_string(),
+                    BotStatusNotReady::Private => "PRIVATE".to_string(),
+                    BotStatusNotReady::Unavailable => "UNAVAILABLE".to_string(),
+                }
+            }
         }
     }
 }

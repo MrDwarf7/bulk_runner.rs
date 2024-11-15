@@ -1,7 +1,5 @@
-use std::{
-    fmt::{self, Debug, Display},
-    process::{ExitStatus, Output},
-};
+use std::fmt::{self, Debug, Display};
+use std::process::{ExitStatus, Output};
 
 #[derive(Debug, Default)]
 pub struct BotOutput {

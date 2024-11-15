@@ -1,5 +1,6 @@
-use crate::info;
 use chrono::Local;
+
+use crate::info;
 
 struct Time {
     start: tokio::time::Instant,
@@ -22,23 +23,23 @@ impl TimeKeeper {
         TimeKeeper { datetime, time }
     }
 
+    #[inline]
     pub fn elapsed(&self) -> tokio::time::Duration {
         self.time.elapsed
     }
 
+    #[inline]
     pub fn datetime(&self) -> chrono::DateTime<Local> {
         self.datetime
     }
 
+    #[inline]
     pub fn print_elapsed(&self) {
-        info!(
-            "->> {:<12} - {:?}",
-            "TIME:: Elapsed time",
-            self.time.start.elapsed()
-        );
+        info!("->> {:<12} - {:?}", "TIME:: Elapsed time", self.time.start.elapsed());
     }
 
     // Need to format this better cos it's insanely difficult to read as it's in tz style
+    #[inline]
     pub fn print_started_at(&self) {
         // let dt = self.datetime();
         let dt = self
@@ -52,6 +53,7 @@ impl TimeKeeper {
 }
 
 impl Default for TimeKeeper {
+    #[inline]
     fn default() -> Self {
         let datetime = Local::now();
         let time = Time {

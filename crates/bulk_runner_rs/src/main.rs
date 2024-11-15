@@ -1,5 +1,4 @@
 use bulk_runner_rs::*;
-
 pub use bulk_runner_rs::{Error, Result, W};
 
 #[tokio::main]
