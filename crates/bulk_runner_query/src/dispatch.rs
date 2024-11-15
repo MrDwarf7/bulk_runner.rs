@@ -1,19 +1,14 @@
 use std::sync::Arc;
 
-use tokio::sync::mpsc::UnboundedSender;
-
 use bulk_runner_bots::{BaseBot, Bot};
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::query_engine::QueryEngine;
 use crate::{error, info, Result};
 
-pub async fn query_database(
-    tx: UnboundedSender<Bot>,
-    parsed_sql_file: impl AsRef<str>,
-    total_run_on: usize,
-) {
+pub async fn query_database(tx: UnboundedSender<Bot>, parsed_sql_file: impl AsRef<str>, limit_total_runnable: usize) {
     let mut base_bots: Vec<BaseBot> = QueryEngine::default()
-        .get_bots(parsed_sql_file.as_ref(), total_run_on as u8)
+        .get_bots(parsed_sql_file.as_ref(), limit_total_runnable as u8)
         .await
         .unwrap();
 
@@ -79,12 +74,8 @@ pub async fn cli_dispatch(mut dispatch_bots: Vec<(Bot, String)>, total_bots: usi
 }
 
 #[tokio::main]
-async fn threaded_dispatch(
-    bot: &Bot,
-    process_name: &str,
-    sempahore: &tokio::sync::Semaphore,
-) -> Result<()> {
-    info!("INNER:: Spawn local: {:}", &process_name);
+async fn threaded_dispatch(bot: &Bot, process_name: &str, sempahore: &tokio::sync::Semaphore) -> Result<()> {
+    info!("->> {:<12} - {}: {}", "THREADED_DISP:: ", "Spawn local", &process_name);
     let permit = sempahore.acquire().await.unwrap();
     let commander = crate::command_builder::AutomateBuilderBase::default()
         .with_sso()
@@ -92,7 +83,7 @@ async fn threaded_dispatch(
         .with_resource(&bot.name)
         .build();
 
-    let res = bot.dispatch(commander.into()).await;
+    let res = bulk_runner_bots::dispatch(bot.name.clone(), commander.into()).await;
     tokio::task::yield_now().await;
     check_err(res).await;
     drop(permit);
