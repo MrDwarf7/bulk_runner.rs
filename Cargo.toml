@@ -1,13 +1,17 @@
 [workspace]
 members = ["crates/bulk_runner_rs", "crates/bulk_runner_bots", "crates/bulk_runner_query"]
 resolver = "2"
+package.rust-version = "1.82.0"
+
+[workspace.metadata]
+version = "2.1.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+exclude = ["target"]
 
 [profile.dev.package."*"]
 opt-level = 3
 codegen-units = 1
-
-# [profile.dev]
-# codegen-backend = "cranelift"
 
 [profile.dev]
 opt-level = 1
@@ -31,7 +35,7 @@ async-trait = "0.1.83"
 tracing = "0.1.40"
 
 # Error handling
-thiserror = "2.0.1"
+thiserror = "2.0.3"
 
 # Database
 deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
