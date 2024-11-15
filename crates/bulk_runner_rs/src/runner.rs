@@ -1,27 +1,29 @@
-use std::collections::VecDeque;
-
 use futures::StreamExt;
 
 use crate::cli::Cli;
 
 use crate::prelude::*;
-use bulk_runner_bots::{Bot, BotStatus, BotStatusReady};
+
+use crate::{Dispatchable, Packet};
 
 pub struct Runner {
     process: String,
-    total_bots: usize,
+    concurrency_limit: usize,
+    total_run_on: usize,
     sql_file_contents: String,
 }
 
 impl From<Cli> for Runner {
     fn from(cli: Cli) -> Self {
         let process = cli.process().to_string();
-        let total_bots = cli.total_bots();
+        let concurrency_limit = cli.concurrency_limit();
+        let total_run_on = cli.total_run_on();
         let sql_file_contents = cli.serialize_sql_file().unwrap_or("bots.sql".to_string());
 
         Runner {
             process,
-            total_bots,
+            concurrency_limit,
+            total_run_on,
             sql_file_contents,
         }
     }
@@ -34,20 +36,26 @@ impl Runner {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
         // Serialize the sql file to a string
-        // let parsed_sql_file = self.serialize_sql_file()?;
         let sql_file_contents = self.sql_file_contents.clone();
+
+        let total_run_on = self.total_run_on;
+
         // Spawn a task to fetch the bots from the database,
-        // We can then fill the base_bot with the new data that's come back from the query [name && current_status]
         let query_handle = tokio::spawn(async move {
-            let tx = tx.clone();
+            // let tx = tx.clone();
             info!("->> {:<12}", "RUN::  Querying database...");
-            bulk_runner_query::query_database(tx, sql_file_contents).await;
+            // TODO:
+            // We want to then pass in -
+            // self.total_run_on
+            // as the param binding
+            bulk_runner_query::query_database(tx, sql_file_contents, total_run_on).await;
         });
 
         // As the query runs, it will return back a Bot (which will have been filled already, we need the Bot to go to next step)
+        let capacity = self.concurrency_limit;
+
         let future_bots = tokio::spawn(async move {
-            // TODO: STREAM: We can stream here also
-            let mut bots = Vec::with_capacity(40);
+            let mut bots = Vec::with_capacity(capacity);
             while let Some(bot) = rx.recv().await {
                 if bot.is_available().is_none() {
                     #[rustfmt::skip]
@@ -63,27 +71,16 @@ impl Runner {
         })
         .await?;
 
-        let mut filled_bots: Vec<Bot> = futures::future::join_all(future_bots)
+        let dispatchable: Dispatchable = futures::future::join_all(future_bots)
             .await
             .into_iter()
             .filter_map(|bot| bot.0)
-            .collect();
-
-        let mut dispatch_bots: VecDeque<(Bot, String)> = VecDeque::with_capacity(filled_bots.len());
-        // HACK: Not the prettiest way of solving this but...
-        filled_bots.drain(..).for_each(|mut bot| {
-            info!("->> {:<12} - {:?}", "RUN:: Filled bot", &bot);
-            if bot.is_logged_out() {
-                bot.status = BotStatus::Ready(BotStatusReady::Idle);
-            }
-            dispatch_bots.push_back((bot, self.process.clone()))
-        });
+            .map(|bot| Packet::new(bot, self.process.clone()))
+            .collect::<Dispatchable>();
 
         query_handle.await?;
 
-        bulk_runner_query::cli_dispatch(dispatch_bots, self.total_bots).await;
-
-        // dispatcher::cli_dispatch(dispatch_bots, self.total_bots).await?;
+        bulk_runner_query::cli_dispatch(dispatchable.into(), self.concurrency_limit).await;
 
         Ok(())
     }

@@ -38,12 +38,12 @@ impl QueryEngine {
         Ok(Self { pool })
     }
 
-    pub async fn get_bots<S>(&self, parsed_file: S) -> Result<Vec<BaseBot>>
+    pub async fn get_bots<S>(&self, parsed_file: S, total_run_on: u8) -> Result<Vec<BaseBot>>
     where
         S: AsRef<str> + Send + Sync,
     {
         Ok(self
-            .query(parsed_file.as_ref())
+            .query(parsed_file.as_ref(), total_run_on)
             .await?
             .par_iter()
             .map(BaseBot::from)
@@ -56,14 +56,14 @@ impl QueryEngine {
 
 #[async_trait::async_trait]
 pub trait Queryable {
-    async fn query<S>(&self, query: S) -> Result<Vec<Row>>
+    async fn query<S>(&self, query: S, total_run_on: u8) -> Result<Vec<Row>>
     where
         S: AsRef<str> + Send + Sync;
 }
 
 #[async_trait::async_trait]
 impl Queryable for QueryEngine {
-    async fn query<S>(&self, query: S) -> Result<Vec<Row>>
+    async fn query<S>(&self, query: S, total_run_on: u8) -> Result<Vec<Row>>
     where
         S: AsRef<str> + Send + Sync,
     {
@@ -72,7 +72,10 @@ impl Queryable for QueryEngine {
             .expect("Failed to get pooled connection in run_query");
 
         #[rustfmt::skip]
-        let results = Query::new(query.as_ref()).query(&mut con).await?.into_results().await?;
+        let mut results = Query::new(query.as_ref());
+        results.bind(total_run_on);
+
+        let results = results.query(&mut con).await?.into_results().await?;
 
         Ok(results
             .into_par_iter()

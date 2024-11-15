@@ -24,11 +24,13 @@ pub struct Cli {
     pub process: String,
 
     /// The number of bots to run concurrently.
-    /// This is handled internally via a semaphore, not via the hardware concurrency of the CPU.
-    #[arg(short = 't', long = "total", default_value = "30", value_hint = clap::ValueHint::Other,
-    long_help = "The number of bots to run concurrently. This is handled internally via a semaphore, not via the hardware concurrency of the CPU.",
-    )]
-    pub total_bots: usize,
+    /// Limits the stress-load on the machine running the cli
+    #[arg(short = 'c', long = "concurrency_limit", default_value = "30", value_hint = clap::ValueHint::Other, long_help = "The number of bots to run concurrently. Limits the stress-load on the machine running the cli.")]
+    pub concurrency_limit: usize,
+
+    /// The total number of bots of which the process will be dispatched for.
+    #[arg(short = 't', long = "total_run_on", default_value = "30", value_hint = clap::ValueHint::Other, long_help = "The total number of bots of which the process will be dispatched for.")]
+    pub total_run_on: usize,
 
     /// Optional path to a SQL file to pull the bots from.
     /// If not provided, the default value is "bots.sql".
@@ -128,8 +130,12 @@ impl Cli {
         &self.process
     }
 
-    pub fn total_bots(&self) -> usize {
-        self.total_bots
+    pub fn concurrency_limit(&self) -> usize {
+        self.concurrency_limit
+    }
+
+    pub fn total_run_on(&self) -> usize {
+        self.total_run_on
     }
 
     pub fn sql_file(&self) -> &PathBuf {

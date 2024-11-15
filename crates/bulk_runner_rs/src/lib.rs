@@ -5,6 +5,7 @@ mod error;
 pub mod timekeeper;
 
 pub mod cli;
+pub mod packets;
 pub mod prelude;
 pub mod runner;
 
@@ -23,6 +24,8 @@ pub use crate::timekeeper::TimeKeeper;
 pub use self::prelude::{Error, Result, W};
 
 pub use self::runner::Runner;
+
+use self::packets::{Dispatchable, Packet};
 
 pub type TracingSubscriber = tracing_subscriber::fmt::SubscriberBuilder<
     tracing_subscriber::fmt::format::DefaultFields,
