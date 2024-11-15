@@ -1,11 +1,11 @@
 [package]
 name = "bulk_runner_rs"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2021"
 authors = ["Blake B./MrDwarf7 <129040985+MrDwarf7@users.noreply.github.com>"]
 description = "The bulk_runner_rs primary CLI/Binary application - Runs BluePrism processes in bulk via the use of the AutomateC.exe that ships with BluePrism."
 readme = "README.md"
-# license = ""
+license = "MIT OR Apache-2.0"
 exclude = ["target"]
 
 [dependencies]
@@ -39,26 +39,3 @@ chrono = "0.4.38"
 # Interactions
 clap = { version = "4.5.18", features = ["derive", "env"] }
 anstyle = "1.0.8"
-
-# Define profiles at top-level for workspace
-# [profile.dev.package."*"]
-# opt-level = 3
-# codegen-units = 1
-
-# [profile.dev]
-# codegen-backend = "cranelift"
-
-# [profile.dev]
-# opt-level = 1
-# codegen-units = 256
-# incremental = true
-
-# [profile.release]
-# opt-level = 3
-# codegen-units = 1
-# debug = "none"
-# debug-assertions = false
-# incremental = true
-# strip = "symbols" # Leave off @ w
-# lto = "fat" ## Can't use with cranelift yet
-# panic = "unwind"
