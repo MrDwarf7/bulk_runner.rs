@@ -76,7 +76,7 @@ pub async fn cli_dispatch(mut dispatch_bots: Vec<(Bot, String)>, total_bots: usi
 #[tokio::main]
 async fn threaded_dispatch(bot: &Bot, process_name: &str, sempahore: &tokio::sync::Semaphore) -> Result<()> {
     info!("->> {:<12} - {}: {}", "THREADED_DISP:: ", "Spawn local", &process_name);
-    let permit = sempahore.acquire().await.unwrap();
+    let permit = sempahore.acquire().await?;
     let commander = crate::command_builder::AutomateBuilderBase::default()
         .with_sso()
         .with_process(process_name)

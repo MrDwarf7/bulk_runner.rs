@@ -1,12 +1,10 @@
-use std::borrow::Cow;
-
 #[inline]
-fn handle_quoted(arg: &str) -> Cow<'_, str> {
+fn handle_quoted(arg: &str) -> std::borrow::Cow<'_, str> {
     if arg.contains(' ') || arg.contains('"') {
         let arg = format!("\"{arg}\"");
-        Cow::Owned(arg)
+        std::borrow::Cow::Owned(arg)
     } else {
-        Cow::Borrowed(arg)
+        std::borrow::Cow::Borrowed(arg)
     }
 }
 

@@ -7,8 +7,6 @@ async fn main() -> Result<()> {
     let cli = cli::Cli::new().check_automate_exists()?;
     init_logger(cli.verbosity_level().into()).init();
 
-    info!("1. Starting bulk_runner_rs...");
-
     info!("->> {:<12}", "MAIN:: 1. Starting bulk_runner_rs... ");
     info!("->> {:<12}", "MAIN:: 2. Cli initialized... ");
 
