@@ -1,34 +1,35 @@
 [workspace]
-members = ["crates/bulk_runner_rs", "crates/bulk_runner_bots", "crates/bulk_runner_query"]
-resolver = "2"
+members              = [ "crates/bulk_runner_rs", "crates/bulk_runner_bots", "crates/bulk_runner_query" ]
+resolver             = "2"
 package.rust-version = "1.82.0"
 
 [workspace.metadata]
 version = "2.1.1"
 edition = "2021"
-license = "MIT OR Apache-2.0"
-exclude = ["target"]
+# license = "MIT OR Apache-2.0"
+license = "LICENSE"
+exclude = [ "target" ]
 
 [profile.dev.package."*"]
-opt-level = 3
+opt-level     = 3
 codegen-units = 1
 
 [profile.dev]
-opt-level = 1
+opt-level     = 1
 codegen-units = 256
-incremental = true
+incremental   = true
 
 [profile.release]
-opt-level = 3
-codegen-units = 1
-debug = "none"
+opt-level        = 3
+codegen-units    = 1
+debug            = "none"
 debug-assertions = false
-incremental = true
+incremental      = true
 
 [workspace.dependencies]
 # Core dependencies
-tokio = { version = "1.41.1", features = ["full", "tracing"] }
-futures = "0.3.31"
+tokio       = { version = "1.41.1", features = [ "full", "tracing" ] }
+futures     = "0.3.31"
 async-trait = "0.1.83"
 
 # Logging
@@ -38,4 +39,4 @@ tracing = "0.1.40"
 thiserror = "2.0.3"
 
 # Database
-deadpool-tiberius = { version = "0.1.8", features = ["winauth", "chrono"] }
+deadpool-tiberius = { version = "0.1.8", features = [ "winauth", "chrono" ] }
