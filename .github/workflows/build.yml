@@ -98,13 +98,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RUSTC_WRAPPER: sccache
-      # RUSTC_WRAPPER: "/home/runner/.cargo/bin/sccache"
       CACHE_VERSION: v1
       SCCACHE_VERSION: 0.10.0
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     steps:
       - name: "Checkout sources"
         uses: actions/checkout@master
+      - name: "Setup sccache"
+        uses: mozilla-actions/sccache-action@v0.0.9
       - name: "Cache Cargo dependencies"
         uses: Swatinem/rust-cache@v2
       - uses: actions/cache@v4
