@@ -10,12 +10,26 @@ pub struct QueryEngine {
     pub(crate) pool: Pool,
 }
 
+#[cfg(target_os = "windows")]
+#[cfg(not(target_os = "unix"))]
 impl Default for QueryEngine {
     /// Assembled a default DBInfo struct, and then creates a QueryEngine from it
     /// # Panics
     /// Panics if the QueryEngine cannot be created or the DBInfo cannot be created
     fn default() -> Self {
         QueryEngine::new(DbInfo::default()).expect("Failed to create QueryEngine")
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
+impl Default for QueryEngine {
+    /// Assembled a default DBInfo struct, and then creates a QueryEngine from it
+    /// # Panics
+    /// Panics if the QueryEngine cannot be created or the DBInfo cannot be created
+    fn default() -> Self {
+        QueryEngine::new(DbInfo::from_env().expect("Failed to create DbInfo from env"))
+            .expect("Failed to create QueryEngine")
     }
 }
 

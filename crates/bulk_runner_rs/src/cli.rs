@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use clap::{command, Parser, ValueEnum};
+use clap::{Parser, ValueEnum};
 
 use crate::prelude::*;
 use crate::Result;
@@ -114,6 +114,20 @@ impl Cli {
         Self::parse()
     }
 
+    pub fn new_with_checks() -> Result<Self> {
+        let cli = Self::new();
+
+        #[cfg(target_os = "windows")]
+        #[cfg(not(target_os = "unix"))]
+        let cli = cli.check_automate_exists()?;
+
+        #[cfg(target_os = "linux")]
+        #[cfg(not(target_os = "windows"))]
+        let cli = cli.check_automate_exists()?.check_db_vars_exist()?;
+
+        Ok(cli)
+    }
+
     #[inline]
     pub fn process(&self) -> &str {
         &self.process
@@ -157,6 +171,33 @@ impl Cli {
         if !path.exists() {
             return Err(Error::AutomateCNotFound);
         }
+        Ok(self)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    #[inline]
+    pub fn check_db_vars_exist(self) -> Result<Self> {
+        let (user, password) =
+            (bulk_runner_query::sql_user_from_env(), bulk_runner_query::sql_password_from_env());
+
+        // Guard clause to manage both || (user | password) not being set
+        if user.is_err() || password.is_err() {
+            // Narrow the error cause to provide feedback on what exactly is missing
+            if let Err(e) = user {
+                error!("DB VAR CHECK:: Failed to get SQL user from env: {}", e);
+                return Err(Error::DbEnvVarUserNotSet);
+            }
+
+            // Narrow the error cause to provide feedback on what exactly is missing
+            if let Err(e) = password {
+                error!("DB VAR CHECK:: Failed to get SQL password from env: {}", e);
+                return Err(Error::DbEnvVarPasswordNotSet);
+            }
+
+            return Err(Error::DbEnvVarsNotSet);
+        }
+
         Ok(self)
     }
 }

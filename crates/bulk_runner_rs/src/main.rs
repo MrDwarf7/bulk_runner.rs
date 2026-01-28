@@ -4,7 +4,7 @@ pub use bulk_runner_rs::{Error, Result, W};
 #[tokio::main]
 async fn main() -> Result<()> {
     let timekeep = TimeKeeper::default();
-    let cli = cli::Cli::new().check_automate_exists()?;
+    let cli = cli::Cli::new_with_checks()?;
     init_logger(cli.verbosity_level().into()).init();
 
     info!("->> {:<12}", "MAIN:: 1. Starting bulk_runner_rs... ");
