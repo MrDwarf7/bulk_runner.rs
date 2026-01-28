@@ -13,9 +13,11 @@ pub struct QueryEngine {
 #[cfg(windows)]
 #[cfg(not(unix))]
 impl Default for QueryEngine {
-    /// Assembled a default DBInfo struct, and then creates a QueryEngine from it
+    /// Assembled a default `DBInfo` struct, and then creates a `QueryEngine` from it
+    ///
     /// # Panics
-    /// Panics if the QueryEngine cannot be created or the DBInfo cannot be created
+    ///
+    /// Panics if the `QueryEngine` cannot be created or the `DBInfo` cannot be created
     fn default() -> Self {
         QueryEngine::new(DbInfo::default()).expect("Failed to create QueryEngine")
     }
@@ -54,6 +56,7 @@ impl QueryEngine {
     /// Retrieves bots from the database based on the provided SQL query and limit.
     ///
     /// # Errors
+    ///
     /// Returns an error if the query fails.
     pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: usize) -> Result<Vec<BaseBot>>
     where
