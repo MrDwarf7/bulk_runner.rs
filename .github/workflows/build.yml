@@ -74,6 +74,8 @@ jobs:
         run: rustup toolchain install nightly --profile default --target ${{ matrix.target }} --no-self-update
       - name: "Ensure nightly rustfmt installed"
         run: rustup component add rustfmt --toolchain nightly
+      - name: "Ensure nightly clippy installed"
+        run: rustup component add clippy --toolchain nightly
       - name: "Run Cargo fmt"
         run: cargo +nightly fmt --all
       - name: "Run Cargo check"
@@ -137,6 +139,8 @@ jobs:
         run: rustup toolchain install nightly --profile default --target ${{ matrix.target }} --no-self-update
       - name: "Ensure nightly rustfmt installed"
         run: rustup component add rustfmt --toolchain nightly
+      - name: "Ensure nightly clippy installed"
+        run: rustup component add clippy --toolchain nightly
       - name: "Run Cargo fmt"
         run: cargo +nightly fmt --all
       - name: "Run Clippy with pedantic"
