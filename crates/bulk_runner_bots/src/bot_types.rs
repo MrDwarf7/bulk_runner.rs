@@ -46,7 +46,7 @@ impl From<String> for BotStatus {
         match status.to_uppercase().as_str() {
             "IDLE" => BotStatus::Ready(BotStatusReady::Idle),
             "PENDING" => BotStatus::Ready(BotStatusReady::Pending),
-            "OFFLINE" => BotStatus::NotReady(BotStatusNotReady::Offline),
+            // "OFFLINE" => BotStatus::NotReady(BotStatusNotReady::Offline),
             "PRIVATE" => BotStatus::NotReady(BotStatusNotReady::Private),
             "UNAVAILABLE" => BotStatus::NotReady(BotStatusNotReady::Unavailable),
             "LOGGED OUT" => BotStatus::Ready(BotStatusReady::LoggedOut),

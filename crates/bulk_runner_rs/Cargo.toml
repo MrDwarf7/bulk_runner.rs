@@ -1,41 +1,35 @@
 [package]
-name = "bulk_runner_rs"
-version = "2.1.1"
-edition = "2021"
-authors = ["Blake B./MrDwarf7 <129040985+MrDwarf7@users.noreply.github.com>"]
+name        = "bulk_runner_rs"
+version     = "2.1.1"
+edition     = "2021"
+authors     = [ "Blake B./MrDwarf7 <129040985+MrDwarf7@users.noreply.github.com>" ]
 description = "The bulk_runner_rs primary CLI/Binary application - Runs BluePrism processes in bulk via the use of the AutomateC.exe that ships with BluePrism."
-readme = "README.md"
-license = "MIT OR Apache-2.0"
-exclude = ["target"]
+readme      = "README.md"
+license     = "MIT OR Apache-2.0"
+exclude     = [ "target" ]
 
 [dependencies]
 # Core dependencies
-tokio = { workspace = true }
-futures = { workspace = true }
-rayon = "1.10.0"
+tokio       = { workspace = true }
+futures     = { workspace = true }
+rayon       = "1.10.0"
 async-trait = "0.1.83"
 
 ## Workspace-core dependencies
-bulk_runner_bots = { path = "../bulk_runner_bots" }
+bulk_runner_bots  = { path = "../bulk_runner_bots" }
 bulk_runner_query = { path = "../bulk_runner_query" }
 
 # Logging
-tracing = { workspace = true }
-tracing-subscriber = { version = "0.3.18", features = [
-    "ansi",
-    "chrono",
-    "env-filter",
-    "serde",
-    "std",
-] }
+tracing            = { workspace = true }
+tracing-subscriber = { version = "0.3.18", features = [ "ansi", "chrono", "env-filter", "serde", "std" ] }
 
 # Error handling
 thiserror = { workspace = true }
 
 # Database
 deadpool-tiberius = { workspace = true }
-chrono = "0.4.38"
+chrono            = "0.4.38"
 
 # Interactions
-clap = { version = "4.5.18", features = ["derive", "env"] }
+clap    = { version = "4.5.18", features = [ "derive", "env" ] }
 anstyle = "1.0.8"

@@ -32,6 +32,7 @@ pub struct AutomateBuilderBase {
 }
 
 impl AutomateBuilderBase {
+    #[must_use]
     #[inline]
     pub fn new() -> Self {
         AutomateBuilderBase::default()
@@ -73,6 +74,7 @@ impl AutomateBuilderBase {
         self
     }
 
+    #[must_use]
     #[inline]
     pub fn build(&self) -> AutomateCCommander {
         AutomateCCommander {

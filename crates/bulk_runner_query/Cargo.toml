@@ -1,14 +1,14 @@
 [package]
-name = "bulk_runner_query"
+name    = "bulk_runner_query"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-exclude = ["target"]
+exclude = [ "target" ]
 
 [dependencies]
 # Core dependencies
-tokio = { workspace = true }
-futures = { workspace = true }
+tokio       = { workspace = true }
+futures     = { workspace = true }
 async-trait = { workspace = true }
 
 rayon = "1.10.0"

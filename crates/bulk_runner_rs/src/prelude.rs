@@ -1,10 +1,11 @@
 // in-crate Error type
 pub use std::path::PathBuf;
-use std::sync::LazyLock;
 
+pub use bulk_runner_bots::DEFAULT_EXE_PATH;
 pub use tracing::{debug, error, info, warn};
 
 pub use crate::error::Error;
+
 // in-crate result type
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -15,8 +16,5 @@ pub static DEFAULT_QUERY_FILE: &str = "bots.sql";
 
 pub static PROD_HOST: &str = "PRDLGDB2";
 pub static PROD_DB: &str = "BP_PRD";
-
-pub static DEFAULT_EXE_PATH: LazyLock<PathBuf> =
-    LazyLock::new(|| PathBuf::from("C:\\Program Files\\Blue Prism Limited\\Blue Prism Automate\\automatec.exe"));
 
 pub use std::sync::Arc;

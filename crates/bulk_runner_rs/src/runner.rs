@@ -24,6 +24,13 @@ impl From<Cli> for Runner {
 }
 
 impl Runner {
+    // TODO: may be better to atually return an Option<()> here?
+
+    /// Orchestrates the entire bulk runner process.
+    ///
+    /// # Errors
+    /// Can fail if any step in the process encounters an error.
+    /// We do our best-effort to recover, and failing that we log the error and continue.
     pub async fn run(&self) -> Result<()> {
         info!("->> {:<12}", "RUN:: Starting run");
 

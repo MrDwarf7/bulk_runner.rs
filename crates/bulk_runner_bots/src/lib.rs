@@ -21,5 +21,6 @@ pub struct W<T>(pub T);
 
 // Need Result & Error types
 
-pub static DEFAULT_EXE_PATH: LazyLock<PathBuf> =
-    LazyLock::new(|| PathBuf::from("C:\\Program Files\\Blue Prism Limited\\Blue Prism Automate\\automatec.exe"));
+pub static DEFAULT_EXE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    PathBuf::from("C:\\Program Files\\Blue Prism Limited\\Blue Prism Automate\\automatec.exe")
+});

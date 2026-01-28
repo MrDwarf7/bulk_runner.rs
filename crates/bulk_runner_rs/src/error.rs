@@ -30,18 +30,18 @@ pub enum Error {
     #[error("Bulk runner query error in binary: {0}")]
     BulkRunnerQuery(#[from] bulk_runner_query::Error),
 
-    #[cfg(not(target_os = "windows"))]
-    #[cfg(target_os = "linux")]
+    #[cfg(not(windows))]
+    #[cfg(unix)]
     #[error("One or more required database environment variables are not set")]
     DbEnvVarsNotSet,
 
-    #[cfg(not(target_os = "windows"))]
-    #[cfg(target_os = "linux")]
+    #[cfg(not(windows))]
+    #[cfg(unix)]
     #[error("The required 'PROD_SQL_USER' environment variable is not set")]
     DbEnvVarUserNotSet,
 
-    #[cfg(not(target_os = "windows"))]
-    #[cfg(target_os = "linux")]
+    #[cfg(not(windows))]
+    #[cfg(unix)]
     #[error("The required 'PROD_SQL_PASSWORD' environment variable is not set")]
     DbEnvVarPasswordNotSet,
 }

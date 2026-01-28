@@ -1,5 +1,5 @@
-#[cfg(target_os = "linux")]
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
+#[cfg(unix)]
 use std::env::VarError;
 
 use deadpool_tiberius::tiberius::AuthMethod;
@@ -11,9 +11,18 @@ pub struct DbInfo {
 }
 
 impl DbInfo {
-    #[cfg(not(target_os = "windows"))]
-    #[cfg(target_os = "linux")]
-    pub fn from_env() -> Result<Self, VarError> {
+    /// Retrieves the database information from environment variables.
+    ///
+    /// # Note
+    /// These are checked on startup by the `Cli` structure when
+    /// calling `new_with_env_check`.
+    ///
+    /// # Errors
+    /// Will fail if any of the required environment variables are not set.
+    ///
+    #[cfg(not(windows))]
+    #[cfg(unix)]
+    pub fn auth_from_env() -> Result<Self, VarError> {
         let host = crate::PROD_HOST.into();
         let db = crate::PROD_DB.into();
         let auth = sql_auth_method_from_env()?;
@@ -23,8 +32,8 @@ impl DbInfo {
 
 // HACK: This is not supposed to be permenant - more a temporary solution to see if we can
 /// pull the db info from the given file
-#[cfg(target_os = "windows")]
-#[cfg(not(target_os = "unix"))]
+#[cfg(windows)]
+#[cfg(not(unix))]
 impl From<String> for DbInfo {
     fn from(db_info: String) -> Self {
         let mut split = db_info.split_whitespace();
@@ -38,8 +47,8 @@ impl From<String> for DbInfo {
     }
 }
 
-#[cfg(target_os = "windows")]
-#[cfg(not(target_os = "unix"))]
+#[cfg(windows)]
+#[cfg(not(unix))]
 impl Default for DbInfo {
     fn default() -> Self {
         Self {
@@ -50,8 +59,8 @@ impl Default for DbInfo {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-#[cfg(target_os = "linux")]
+#[cfg(not(windows))]
+#[cfg(unix)]
 impl From<String> for DbInfo {
     fn from(db_info: String) -> Self {
         let mut split = db_info.split_whitespace();
@@ -63,35 +72,61 @@ impl From<String> for DbInfo {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-#[cfg(target_os = "linux")]
+/// Default implementation that pulls from environment variables.
+///
+/// # Panics
+/// Will panic if the environment variables are not set.
+#[cfg(not(windows))]
+#[cfg(unix)]
 impl Default for DbInfo {
     fn default() -> Self {
-        let tried = DbInfo::from_env();
+        let tried = DbInfo::auth_from_env();
 
         match tried {
             Ok(db_info) => db_info,
-            Err(e) => panic!("Failed to get DbInfo from env: {}", e),
+            Err(e) => panic!("Failed to get DbInfo from env: {e}"),
         }
     }
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(not(target_os = "windows"))]
+/// Attempts to retrieve the SQL authentication method from environment variables.
+///
+/// # Environment Variables
+/// * `PROD_SQL_USER` - The SQL username.
+/// * `PROD_SQL_PASSWORD` - The SQL password.
+///
+/// # Errors
+/// Will return an error if either environment variable is not set.
+#[cfg(not(windows))]
+#[cfg(unix)]
 pub fn sql_auth_method_from_env() -> Result<AuthMethod, VarError> {
     let user = sql_user_from_env()?;
     let password = sql_password_from_env()?;
     Ok(deadpool_tiberius::tiberius::AuthMethod::sql_server(user, password))
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(not(target_os = "windows"))]
+/// Attempts to retrieve the SQL username from environment variables.
+///
+/// # Environment Variables
+/// * `PROD_SQL_USER` - The SQL username.
+///
+/// # Errors
+/// Returns an error if the environment variable is not set.
+#[cfg(not(windows))]
+#[cfg(unix)]
 pub fn sql_user_from_env() -> Result<String, VarError> {
     std::env::var("PROD_SQL_USER")
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(not(target_os = "windows"))]
+/// Attempts to retrieve the SQL password from environment variables.
+///
+/// # Environment Variables
+/// * `PROD_SQL_PASSWORD` - The SQL password.
+///
+/// # Errors
+/// Returns an error if the environment variable is not set.
+#[cfg(not(windows))]
+#[cfg(unix)]
 pub fn sql_password_from_env() -> Result<String, VarError> {
     std::env::var("PROD_SQL_PASSWORD")
 }

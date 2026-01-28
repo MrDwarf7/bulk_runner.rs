@@ -11,7 +11,7 @@ impl From<Dispatchable> for Vec<(Bot, String)> {
 }
 
 pub struct Packet {
-    pub bot: Bot,
+    pub bot:          Bot,
     pub process_name: String,
 }
 
@@ -20,6 +20,7 @@ pub struct Dispatchable {
 }
 
 impl Packet {
+    #[must_use]
     pub fn new(bot: Bot, process_name: String) -> Self {
         Packet { bot, process_name }
     }

@@ -3,31 +3,35 @@ use chrono::Local;
 use crate::info;
 
 struct Time {
-    start: tokio::time::Instant,
+    start:   tokio::time::Instant,
     elapsed: tokio::time::Duration,
 }
 
 pub struct TimeKeeper {
     datetime: chrono::DateTime<Local>,
-    time: Time,
+    time:     Time,
 }
 
 impl TimeKeeper {
+    #[must_use]
+    #[inline]
     pub fn new() -> Self {
         let datetime = Local::now();
         let time = Time {
-            start: tokio::time::Instant::now(),
+            start:   tokio::time::Instant::now(),
             elapsed: tokio::time::Duration::default(),
         };
 
         TimeKeeper { datetime, time }
     }
 
+    #[must_use]
     #[inline]
     pub fn elapsed(&self) -> tokio::time::Duration {
         self.time.elapsed
     }
 
+    #[must_use]
     #[inline]
     pub fn datetime(&self) -> chrono::DateTime<Local> {
         self.datetime
@@ -57,7 +61,7 @@ impl Default for TimeKeeper {
     fn default() -> Self {
         let datetime = Local::now();
         let time = Time {
-            start: tokio::time::Instant::now(),
+            start:   tokio::time::Instant::now(),
             elapsed: tokio::time::Duration::default(),
         };
 

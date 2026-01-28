@@ -1,3 +1,5 @@
+use tokio::sync::oneshot::error::RecvError;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Generic error handler: {0}")]
@@ -23,4 +25,7 @@ pub enum Error {
 
     #[error("Error parsing file: {0}")]
     Parse(#[from] std::string::FromUtf8Error),
+
+    #[error("Child process spawn failed")]
+    ChildProcessSpawnFailed(#[from] RecvError),
 }

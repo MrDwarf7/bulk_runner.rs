@@ -4,18 +4,20 @@ use std::process::{ExitStatus, Output};
 #[derive(Debug, Default)]
 pub struct BotOutput {
     inner_buf: Vec<u8>,
-    stdout: String,
-    stderr: String,
-    status: ExitStatus,
+    stdout:    String,
+    stderr:    String,
+    status:    ExitStatus,
 }
 
 impl BotOutput {
     /// Returns the inner buffer of the output.
+    #[must_use]
     pub fn inner_buf(&self) -> &[u8] {
         &self.inner_buf
     }
 
     /// Returns the stdout of the output.
+    #[must_use]
     #[inline]
     #[allow(dead_code)]
     pub fn stdout(&self) -> &str {
@@ -23,6 +25,7 @@ impl BotOutput {
     }
 
     /// Returns the stderr of the output.
+    #[must_use]
     #[inline]
     #[allow(dead_code)]
     pub fn stderr(&self) -> &str {
@@ -43,7 +46,7 @@ impl BotOutput {
     pub fn print_buffer(&self) {
         let buffer = String::from_utf8_lossy(&self.inner_buf);
 
-        println!("Buffer: {}", buffer);
+        println!("Buffer: {buffer}");
     }
 }
 
@@ -51,9 +54,9 @@ impl From<Output> for BotOutput {
     fn from(output: Output) -> Self {
         Self {
             inner_buf: output.stdout.clone(),
-            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            status: output.status,
+            stdout:    String::from_utf8_lossy(&output.stdout).to_string(),
+            stderr:    String::from_utf8_lossy(&output.stderr).to_string(),
+            status:    output.status,
         }
     }
 }

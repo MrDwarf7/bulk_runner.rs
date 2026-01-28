@@ -26,4 +26,7 @@ pub enum Error {
 
     #[error("Bulk Runner Bots failure in query specific crate!: {0}")]
     BulkRunnerBots(#[from] bulk_runner_bots::Error),
+
+    #[error("Tokio Join error: {0}")]
+    TokioJoinError(tokio::task::JoinError),
 }
