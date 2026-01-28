@@ -5,20 +5,20 @@ use crate::prelude::*;
 use crate::{Dispatchable, Packet};
 
 pub struct Runner {
-    process: String,
-    concurrency_limit: usize,
+    process:              String,
+    concurrency_limit:    usize,
     limit_total_runnable: usize,
-    sql_file_contents: String,
+    sql_file_contents:    String,
 }
 
 impl From<Cli> for Runner {
     #[inline]
     fn from(cli: Cli) -> Self {
         Runner {
-            process: cli.process().to_string(),
-            concurrency_limit: cli.concurrency_limit(),
+            process:              cli.process().to_string(),
+            concurrency_limit:    cli.concurrency_limit(),
             limit_total_runnable: cli.limit_total_runnable(),
-            sql_file_contents: cli.serialize_sql_file().unwrap_or("bots.sql".to_string()),
+            sql_file_contents:    cli.serialize_sql_file().unwrap_or("bots.sql".to_string()),
         }
     }
 }

@@ -7,6 +7,11 @@ mod query_engine;
 use tracing::{error, info};
 
 pub use crate::command_builder::AutomateBuilderBase;
+#[cfg(target_os = "windows")]
+#[cfg(not(target_os = "unix"))]
+pub use crate::db_info::DbInfo;
+#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "linux")]
 pub use crate::db_info::{sql_password_from_env, sql_user_from_env, DbInfo};
 pub use crate::dispatch::{cli_dispatch, query_database};
 // use bulk_runner_bots::{BaseBot, Bot};

@@ -6,7 +6,11 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::query_engine::QueryEngine;
 use crate::{error, info, Result};
 
-pub async fn query_database(tx: UnboundedSender<Bot>, parsed_sql_file: impl AsRef<str>, limit_total_runnable: usize) {
+pub async fn query_database(
+    tx: UnboundedSender<Bot>,
+    parsed_sql_file: impl AsRef<str>,
+    limit_total_runnable: usize,
+) {
     let mut base_bots: Vec<BaseBot> = QueryEngine::default()
         .get_bots(parsed_sql_file.as_ref(), limit_total_runnable as u8)
         .await
