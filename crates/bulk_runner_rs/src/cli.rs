@@ -103,51 +103,72 @@ impl Cli {
     /// Create a new instance of the Cli struct.
     ///
     /// # Notes:
-    /// This will check if the AutomateC executable exists at the path specified in the prelude.
+    /// This will check if the `AutomateC` executable exists at the path specified in the prelude.
     /// If it does not exist, it will return an error and exit the process.
     ///
-    /// There is a bypass for this check, which can be set by setting the environment variable BYPASS_AUTOMATEC_CHECK.
+    /// There is a bypass for this check, which can be set by setting the environment variable `BYPASS_AUTOMATEC_CHECK`.
     ///
     /// This is useful for testing purposes.
+    #[must_use]
     #[inline]
     pub fn new() -> Self {
         Self::parse()
     }
 
+    /// Parses a new `Cli` instance and performs necessary environment checks.
+    /// `check_automate_exists` is checked regardless,
+    /// and `check_db_vars_exist` (on unix systems)
+    /// are called.
+    ///
+    /// # Errors
+    /// Returns an error if the `AutomateC` executable does not exist at the specified path,
+    /// Returns an error if the necessary DB environment variables are not set (on unix systems).
     pub fn new_with_checks() -> Result<Self> {
         let cli = Self::new();
 
-        #[cfg(target_os = "windows")]
-        #[cfg(not(target_os = "unix"))]
+        #[cfg(not(unix))]
+        #[cfg(windows)]
         let cli = cli.check_automate_exists()?;
 
-        #[cfg(target_os = "linux")]
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(not(windows))]
+        #[cfg(unix)]
         let cli = cli.check_automate_exists()?.check_db_vars_exist()?;
 
         Ok(cli)
     }
 
+    #[must_use]
     #[inline]
     pub fn process(&self) -> &str {
         &self.process
     }
 
+    #[must_use]
     #[inline]
     pub fn concurrency_limit(&self) -> usize {
         self.concurrency_limit
     }
 
+    #[must_use]
     #[inline]
     pub fn limit_total_runnable(&self) -> usize {
         self.limit_total_runnable
     }
 
+    /// Retrieves the SQL file path.
+    ///
+    /// # Panics
+    /// Function will panic if the SQL file path is not set.
+    #[must_use]
     #[inline]
     pub fn sql_file(&self) -> &PathBuf {
-        self.sql_file.as_ref().unwrap()
+        // self.sql_file.as_ref().unwrap()
+        self.sql_file
+            .as_ref()
+            .expect("SQL file path should have a default value")
     }
 
+    #[must_use]
     #[inline]
     pub fn verbosity_level(&self) -> VerbosityLevel {
         self.verbosity_level.unwrap_or(VerbosityLevel::Info)
@@ -155,13 +176,24 @@ impl Cli {
 }
 
 impl Cli {
+    /// 'Serializes' the SQL file into a single line string.
+    /// This is done by converting to utf-8 and replacing newlines with spaces.
+    /// SQL itself does not care about newlines, so this is safe to do in this context.
+    ///
+    /// # Errors
+    /// Has the possibility to error if the file cannot be read,
+    /// can also fail if the file is not valid utf-8.
     pub fn serialize_sql_file(&self) -> Result<String> {
         info!("SERIALIZE:: Starting serialization...");
         let buffer = std::fs::read(self.sql_file())?;
-        let sql_file_query = String::from_utf8(buffer)?.replace("\n", " ");
+        let sql_file_query = String::from_utf8(buffer)?.replace('\n', " ");
         Ok(sql_file_query)
     }
 
+    /// Runs a check to see if the `AutomateC` executable exists at the specified path.
+    ///
+    /// # Errors
+    /// Returns an error if the `AutomateC` executable does not exist at the specified path.
     #[inline]
     pub fn check_automate_exists(self) -> Result<Self> {
         if std::env::var("BYPASS_AUTOMATEC_CHECK").is_ok() {
@@ -174,8 +206,13 @@ impl Cli {
         Ok(self)
     }
 
-    #[cfg(not(target_os = "windows"))]
-    #[cfg(target_os = "linux")]
+    /// Linux specific -
+    /// Checks if the necessary DB environment variables are set.
+    ///
+    /// # Errors
+    /// Returns an error if the necessary DB environment variables are not set.
+    #[cfg(not(windows))]
+    #[cfg(unix)]
     #[inline]
     pub fn check_db_vars_exist(self) -> Result<Self> {
         let (user, password) =
@@ -224,7 +261,8 @@ impl From<u8> for VerbosityLevel {
             2 => VerbosityLevel::Info,
             3 => VerbosityLevel::Debug,
             4 => VerbosityLevel::Trace,
-            _ => VerbosityLevel::Info,
+            _ => unreachable!("You've supplied an invalid verbosity level."),
+            // _ => VerbosityLevel::Info,
         }
     }
 }
@@ -240,7 +278,7 @@ impl FromStr for VerbosityLevel {
             "INFO" => Ok(VerbosityLevel::Info),
             "DEBUG" => Ok(VerbosityLevel::Debug),
             "TRACE" => Ok(VerbosityLevel::Trace),
-            _ => Err(Error::Generic(format!("Verbosity level: {} is not supported.", s))),
+            _ => Err(Error::Generic(format!("Verbosity level: {s} is not supported."))),
         }
     }
 }
@@ -265,7 +303,8 @@ impl From<u8> for SpanType {
             1 => SpanType::Exit,
             2 => SpanType::Enter,
             3 => SpanType::Full,
-            _ => SpanType::None,
+            _ => unreachable!("You've supplied an invalid span type."),
+            // _ => SpanType::None,
         }
     }
 }
@@ -280,11 +319,12 @@ impl FromStr for SpanType {
             "ENTER" => Ok(SpanType::Enter),
             "EXIT" => Ok(SpanType::Exit),
             "FULL" => Ok(SpanType::Full),
-            _ => Err(Error::Generic(format!("Span type: {} is not supported.", s))),
+            _ => Err(Error::Generic(format!("Span type: {s} is not supported."))),
         }
     }
 }
 
+#[must_use]
 pub fn get_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
         .usage(

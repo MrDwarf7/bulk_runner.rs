@@ -4,16 +4,18 @@ use crate::bot_types::{BotStatus, BotStatusNotReady, BotStatusReady};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Bot {
-    pub name: String,
+    pub name:   String,
     pub status: BotStatus,
 }
 
 impl Bot {
+    #[must_use]
     #[inline]
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    #[must_use]
     #[inline]
     pub fn is_logged_out(&self) -> bool {
         match &self.status {
@@ -22,21 +24,21 @@ impl Bot {
         }
     }
 
+    #[must_use]
     #[inline]
     pub fn is_available(&self) -> Option<Bot> {
         match &self.status {
             BotStatus::Ready(ready) => {
                 match ready {
-                    BotStatusReady::Idle => Some(self.clone()),
                     BotStatusReady::Pending => None,
-                    BotStatusReady::LoggedOut => Some(self.clone()),
+                    BotStatusReady::Idle | BotStatusReady::LoggedOut => Some(self.clone()),
                 }
             }
             BotStatus::NotReady(not_ready) => {
                 match not_ready {
-                    BotStatusNotReady::Offline => None,
-                    BotStatusNotReady::Private => None,
-                    BotStatusNotReady::Unavailable => None,
+                    BotStatusNotReady::Offline
+                    | BotStatusNotReady::Private
+                    | BotStatusNotReady::Unavailable => None,
                 }
             }
         }
@@ -45,7 +47,7 @@ impl Bot {
 
 #[derive(Default, Clone, Debug)]
 pub struct BaseBot {
-    pub(crate) name: Option<String>,
+    pub(crate) name:   Option<String>,
     pub(crate) status: Option<String>,
 }
 
@@ -65,7 +67,7 @@ impl From<&Row> for BaseBot {
             .to_string();
 
         BaseBot {
-            name: Some(name),
+            name:   Some(name),
             status: Some(status),
         }
     }
@@ -94,7 +96,7 @@ impl From<&BaseBot> for Bot {
         let name = value.name.clone().unwrap_or_default();
         let status = value.status.clone().unwrap_or_default();
         Bot {
-            name: name.to_uppercase(),
+            name:   name.to_uppercase(),
             status: status.into(),
         }
     }

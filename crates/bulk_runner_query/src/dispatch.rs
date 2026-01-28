@@ -11,10 +11,16 @@ pub async fn query_database(
     parsed_sql_file: impl AsRef<str>,
     limit_total_runnable: usize,
 ) {
-    let mut base_bots: Vec<BaseBot> = QueryEngine::default()
-        .get_bots(parsed_sql_file.as_ref(), limit_total_runnable as u8)
+    let mut base_bots: Vec<BaseBot> = match QueryEngine::default()
+        .get_bots(parsed_sql_file.as_ref(), limit_total_runnable)
         .await
-        .unwrap();
+    {
+        Ok(bots) => bots,
+        Err(e) => {
+            error!("->> {:<12} - {:?}", "QUERY:: ERROR", e);
+            vec![]
+        }
+    };
 
     // TODO: STREAM: We can stream these instead of iterating over them?
     while let Some(base_bot) = base_bots.pop() {
@@ -22,11 +28,10 @@ pub async fn query_database(
         match filled_bot.status {
             bulk_runner_bots::BotStatus::Ready(ref status) => {
                 info!("{:<12} - {:?}", "QUERY:: Ready bot", status);
-                tx.send(filled_bot).unwrap();
+                tx.send(filled_bot).unwrap_or_default();
             }
             bulk_runner_bots::BotStatus::NotReady(status) => {
                 info!("{:<12} - {:?}", "QUERY:: Not ready bot", status);
-                continue;
             }
         }
     }
@@ -49,7 +54,7 @@ pub async fn cli_dispatch(mut dispatch_bots: Vec<(Bot, String)>, total_bots: usi
 
             tokio::task::spawn_blocking(move || {
                 let res = threaded_dispatch(&bot, &process_name, sempahore.as_ref());
-                dispatched_tx.send(res).unwrap();
+                dispatched_tx.send(res).unwrap_or_default();
                 drop(sempahore);
                 drop(dispatched_tx);
             })
@@ -58,7 +63,7 @@ pub async fn cli_dispatch(mut dispatch_bots: Vec<(Bot, String)>, total_bots: usi
 
     let t1 = tokio::spawn(async move {
         for v in blocking_task_handles {
-            v.await.unwrap();
+            v.await.map_err(error::Error::TokioJoinError).unwrap_or_default();
         }
     });
     drop(dispatched_tx);
@@ -66,7 +71,7 @@ pub async fn cli_dispatch(mut dispatch_bots: Vec<(Bot, String)>, total_bots: usi
     let t2 = tokio::spawn(async move {
         while let Some(res) = dispatched_rx.recv().await {
             match res {
-                Ok(_) => info!("->> {:<12} - {}", "DISPATCH:: OK", "Bot ran successfully!"),
+                Ok(()) => info!("->> {:<12} - {}", "DISPATCH:: OK", "Bot ran successfully!"),
                 Err(e) => error!("->> {:<12} - {:?}", "DISPATCH:: ERROR", e),
             }
         }
@@ -89,15 +94,15 @@ async fn threaded_dispatch(bot: &Bot, process_name: &str, sempahore: &tokio::syn
 
     let res = bulk_runner_bots::dispatch(bot.name.clone(), commander.into()).await;
     tokio::task::yield_now().await;
-    check_err(res).await;
+    check_err(res);
     drop(permit);
 
     Ok(())
 }
 
-pub async fn check_err(res: bulk_runner_bots::Result<()>) {
+pub fn check_err(res: bulk_runner_bots::Result<()>) {
     match res {
-        Ok(_) => info!("->> {:<12} - {}", "CHECK_ERR:: OK", "Bot ran successfully!"),
+        Ok(()) => info!("->> {:<12} - {}", "CHECK_ERR:: OK", "Bot ran successfully!"),
         Err(e) => error!("->> {:<12} - {:?}", "CHECK_ERR:: ERROR", e),
     }
 }

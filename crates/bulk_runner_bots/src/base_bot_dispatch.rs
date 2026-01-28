@@ -3,19 +3,35 @@ use std::process::Output;
 
 use tokio::process::{Child, Command};
 
-use crate::{debug, error, info, Result};
+use crate::{debug, error, info, Error, Result};
 
-pub async fn dispatch(name: impl AsRef<str> + Display + Send + 'static, commander: Vec<String>) -> Result<()> {
+/// Function called per-dispatch to spawn a child process to run the bot
+///
+/// # Errors
+/// Returns an error if the child process fails to spawn
+///
+/// # Panics
+/// Will panic if the child process fails to spawn
+pub async fn dispatch(
+    name: impl AsRef<str> + Display + Send + 'static,
+    commander: Vec<String>,
+) -> Result<()> {
     let (tx_stop, rx_stop) = tokio::sync::oneshot::channel();
 
     let cmd = Command::new(&*crate::DEFAULT_EXE_PATH);
 
     spawn_child_proc(tx_stop, cmd, commander).await;
 
-    let child = rx_stop.await.unwrap();
+    let child = match rx_stop.await {
+        Ok(c) => {
+            info!("->> {:<12} - {}", "DISPATCH:: OK", "Child process spawned!");
+            c
+        }
+        Err(e) => return Err(Error::ChildProcessSpawnFailed(e)),
+    };
 
     let output = tokio::task::spawn(async move {
-        let after = child.wait_with_output().await.unwrap();
+        let after = child.wait_with_output().await.map_err(Error::from).unwrap();
         CheckStatus::from(after).check_status(name);
     });
 
@@ -27,7 +43,11 @@ pub async fn dispatch(name: impl AsRef<str> + Display + Send + 'static, commande
     Ok(())
 }
 
-async fn spawn_child_proc(tx_stop: tokio::sync::oneshot::Sender<Child>, mut cmd: Command, commander: Vec<String>) {
+async fn spawn_child_proc(
+    tx_stop: tokio::sync::oneshot::Sender<Child>,
+    mut cmd: Command,
+    commander: Vec<String>,
+) {
     debug!("->> {:<12} - {:?}", "DISPATCH:: Commander", &commander);
     info!("{:<12}", "DISPATCH:: Child proc");
 
@@ -75,9 +95,10 @@ enum CheckStatus {
 impl From<Output> for CheckStatus {
     #[inline]
     fn from(output: Output) -> Self {
-        match output.status.success() {
-            true => CheckStatus::Success(output),
-            false => CheckStatus::Fail(output),
+        if output.status.success() {
+            CheckStatus::Success(output)
+        } else {
+            CheckStatus::Fail(output)
         }
     }
 }
@@ -90,11 +111,14 @@ impl CheckStatus {
                 info!(
                     "->> {:<12} - {}: {name} - with output: {}",
                     "DISPATCH:: OK", "Job is now running on", output.status
-                )
+                );
             }
             CheckStatus::Fail(output) => {
-                error!("->> {:<12} - {}: {name} - {output:?}", "DISPATCH:: ERR", "Job has failed to start running on")
+                error!(
+                    "->> {:<12} - {}: {name} - {output:?}",
+                    "DISPATCH:: ERR", "Job has failed to start running on"
+                );
             }
-        };
+        }
     }
 }

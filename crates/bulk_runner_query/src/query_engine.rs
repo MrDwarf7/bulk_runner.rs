@@ -10,8 +10,8 @@ pub struct QueryEngine {
     pub(crate) pool: Pool,
 }
 
-#[cfg(target_os = "windows")]
-#[cfg(not(target_os = "unix"))]
+#[cfg(windows)]
+#[cfg(not(unix))]
 impl Default for QueryEngine {
     /// Assembled a default DBInfo struct, and then creates a QueryEngine from it
     /// # Panics
@@ -21,14 +21,16 @@ impl Default for QueryEngine {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-#[cfg(target_os = "linux")]
+#[cfg(not(windows))]
+#[cfg(unix)]
 impl Default for QueryEngine {
-    /// Assembled a default DBInfo struct, and then creates a QueryEngine from it
+    /// Assembled a default `DBInfo` struct, and then creates a `QueryEngine` from it
+    ///
     /// # Panics
-    /// Panics if the QueryEngine cannot be created or the DBInfo cannot be created
+    ///
+    /// Panics if the `QueryEngine` cannot be created or the `DBInfo` cannot be created
     fn default() -> Self {
-        QueryEngine::new(DbInfo::from_env().expect("Failed to create DbInfo from env"))
+        QueryEngine::new(DbInfo::auth_from_env().expect("Failed to create DbInfo from env"))
             .expect("Failed to create QueryEngine")
     }
 }
@@ -49,12 +51,23 @@ impl QueryEngine {
         Ok(Self { pool })
     }
 
-    pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: u8) -> Result<Vec<BaseBot>>
+    /// Retrieves bots from the database based on the provided SQL query and limit.
+    ///
+    /// # Errors
+    /// Returns an error if the query fails.
+    pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: usize) -> Result<Vec<BaseBot>>
     where
         S: AsRef<str> + Send + Sync,
     {
+        let limited_total_runnable = u8::try_from(if limit_total_runnable == 0 {
+            u8::MAX as usize
+        } else {
+            limit_total_runnable
+        })
+        .unwrap_or(u8::MAX);
+
         Ok(self
-            .query(parsed_file.as_ref(), limit_total_runnable)
+            .query(parsed_file.as_ref(), limited_total_runnable)
             .await?
             .par_iter()
             .map(BaseBot::from)
