@@ -14,8 +14,7 @@ async fn main() -> bulk_runner_rs::Result<()> {
         .map_err(|e| error!("->> {:<12} {}", "MAIN::  Failed to read SQL file: ", e))
         .expect("Failed to read SQL file");
 
-    Runner::try_from(&cli)
-        .expect("Failed to initialize Runner from CLI arguments")
+    Runner::from(&cli)
         .run(sql_file_contents)
         .await
         .map_err(|e| error!("->> {:<12} {}", "MAIN:: 4. Runner failed to run: ", e))

@@ -4,7 +4,7 @@ use deadpool_tiberius::{Manager, Pool};
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::db_info::DbInfo;
-use crate::Result;
+use crate::{BulkRunnerQueryError, Result};
 
 pub struct QueryEngine {
     pub(crate) pool: Pool,
@@ -31,16 +31,15 @@ impl QueryEngine {
     /// # Errors
     ///
     /// Returns an error if the query fails.
-    pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: usize) -> Result<Vec<BaseBot>>
+    pub async fn get_bots<S>(&self, parsed_file: S, limit_total_runnable: u8) -> Result<Vec<BaseBot>>
     where
         S: AsRef<str> + Send + Sync,
     {
-        let limited_total_runnable = u8::try_from(if limit_total_runnable == 0 {
-            u8::MAX as usize
+        let limited_total_runnable = if limit_total_runnable == 0 {
+            u8::MAX
         } else {
             limit_total_runnable
-        })
-        .unwrap_or(u8::MAX);
+        };
 
         Ok(self
             .query(parsed_file.as_ref(), limited_total_runnable)
@@ -64,8 +63,9 @@ impl Queryable for QueryEngine {
     where
         S: AsRef<str> + Send + Sync,
     {
-        #[rustfmt::skip]
-        let mut con = self.pool.get().await.expect("Failed to get pooled connection in run_query");
+        let mut con = self.pool.get().await.map_err(|e| {
+            BulkRunnerQueryError::ConnectionError(format!("Failed to get connection from pool: {e}"))
+        })?;
 
         let mut results = Query::new(query.as_ref());
         results.bind(limit_total_runnable);
@@ -76,8 +76,10 @@ impl Queryable for QueryEngine {
     }
 }
 
-impl From<DbInfo> for QueryEngine {
-    fn from(value: DbInfo) -> Self {
-        QueryEngine::new(value).expect("Failed to create QueryEngine")
+impl TryFrom<DbInfo> for QueryEngine {
+    type Error = BulkRunnerQueryError;
+
+    fn try_from(value: DbInfo) -> Result<Self> {
+        Self::new(value)
     }
 }

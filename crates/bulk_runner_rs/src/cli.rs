@@ -30,7 +30,7 @@ pub struct Cli {
 
     /// The total number of bots of which the process will be dispatched for.
     #[arg(short = 'l', long = "limit_total_runnable", default_value = "30", value_hint = clap::ValueHint::Other, long_help = "The total number of bots of which the process will be dispatched for.")]
-    pub limit_total_runnable: usize,
+    pub limit_total_runnable: u8,
 
     /// Optional path to a SQL file to pull the bots from.
     /// If not provided, the default value is "bots.sql".

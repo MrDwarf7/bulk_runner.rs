@@ -10,19 +10,17 @@ pub struct Runner {
     // entire Runner struct and just have `fn run(...)` as a free-floating function that takes
     // either CLI, or the 3 external fields it needs honestly.
     concurrency_limit:    usize,
-    limit_total_runnable: usize,
+    limit_total_runnable: u8,
 }
 
-impl TryFrom<&Cli> for Runner {
-    type Error = String;
-
+impl From<&Cli> for Runner {
     #[inline]
-    fn try_from(cli: &Cli) -> std::result::Result<Self, Self::Error> {
-        Ok(Self {
+    fn from(cli: &Cli) -> Self {
+        Self {
             process:              cli.process.clone(),
             concurrency_limit:    cli.concurrency_limit,
             limit_total_runnable: cli.limit_total_runnable,
-        })
+        }
     }
 }
 
@@ -72,13 +70,13 @@ impl Runner {
         })
         .await?;
 
-        let process = Box::leak(Box::new(self.process.clone()));
+        let process = self.process.clone();
 
         let dispatchable: Dispatchable = futures::future::join_all(future_bots)
             .await
             .into_iter()
             .filter_map(|bot| bot.0)
-            .map(|bot| Packet::new(bot, process.to_owned()))
+            .map(|bot| Packet::new(bot, process.clone()))
             .collect::<Dispatchable>();
 
         query_handle.await?;

@@ -14,7 +14,7 @@ use crate::{error, info, DbInfo, Result};
 pub async fn query_database<S: AsRef<str>>(
     tx: UnboundedSender<Bot>,
     parsed_sql_file: S,
-    limit_total_runnable: usize,
+    limit_total_runnable: u8,
 ) {
     let db_info = DbInfo::auth_from_env()
         .map_err(|e| error!("->> {:<12} - {:?}", "DB_INFO:: ERROR", e))

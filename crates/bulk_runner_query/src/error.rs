@@ -26,4 +26,7 @@ pub enum Error {
 
     #[error("Tokio Join error: {0}")]
     TokioJoinError(tokio::task::JoinError),
+
+    #[error("Connection error: {0}")]
+    ConnectionError(String),
 }
