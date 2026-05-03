@@ -1,23 +1,40 @@
 use std::sync::Arc;
 
-use bulk_runner_bots::{BaseBot, Bot};
+use bulk_runner_bots::Bot;
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::query_engine::QueryEngine;
-use crate::{error, info, Result};
+use crate::{error, info, DbInfo, Result};
 
-pub async fn query_database(
+/// Querys the database for bots to run based on the provided SQL file and sends them through the provided channel.
+///
+/// # Panics
+/// Panics if the SQL file cannot be read, as this is a critical failure that prevents the runner from functioning.
+///
+pub async fn query_database<S: AsRef<str>>(
     tx: UnboundedSender<Bot>,
-    parsed_sql_file: impl AsRef<str>,
+    parsed_sql_file: S,
     limit_total_runnable: usize,
 ) {
-    let mut base_bots: Vec<BaseBot> = match QueryEngine::default()
-        .get_bots(parsed_sql_file.as_ref(), limit_total_runnable)
-        .await
-    {
-        Ok(bots) => bots,
+    let db_info = DbInfo::auth_from_env()
+        .map_err(|e| error!("->> {:<12} - {:?}", "DB_INFO:: ERROR", e))
+        .expect("Failed to create DbInfo from env");
+
+    let mut base_bots = match QueryEngine::new(db_info) {
+        Ok(engine) => {
+            match engine
+                .get_bots(parsed_sql_file.as_ref(), limit_total_runnable)
+                .await
+            {
+                Ok(bots) => bots,
+                Err(e) => {
+                    error!("->> {:<12} - {:?}", "QUERY_ENGINE:: ERROR", e);
+                    vec![]
+                }
+            }
+        }
         Err(e) => {
-            error!("->> {:<12} - {:?}", "QUERY:: ERROR", e);
+            error!("->> {:<12} - {:?}", "QUERY_ENGINE:: ERROR", e);
             vec![]
         }
     };

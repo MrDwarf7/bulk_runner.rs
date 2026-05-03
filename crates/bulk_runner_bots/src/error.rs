@@ -5,9 +5,6 @@ pub enum Error {
     #[error("Generic error handler: {0}")]
     Generic(String),
 
-    // #[error("AutomateC error: {0}")]
-    // AutomateC(#[from] crate::internals::Error),
-    //
     #[error("Tokio error: {0}")]
     Tokio(#[from] tokio::task::JoinError),
 
@@ -28,4 +25,7 @@ pub enum Error {
 
     #[error("Child process spawn failed")]
     ChildProcessSpawnFailed(#[from] RecvError),
+
+    #[error("Environment variable error: {0}")]
+    EnvVar(#[from] std::env::VarError),
 }

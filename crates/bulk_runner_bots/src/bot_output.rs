@@ -78,12 +78,3 @@ impl Display for BotOutput {
         write!(f, "status: {}", self.status)
     }
 }
-
-// impl From<crate::internals::Error> for BotOutput {
-//     fn from(error: crate::internals::Error) -> Self {
-//         Self {
-//             stderr: error.to_string(),
-//             ..Default::default()
-//         }
-//     }
-// }

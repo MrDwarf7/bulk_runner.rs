@@ -6,20 +6,23 @@ use crate::{Dispatchable, Packet};
 
 pub struct Runner {
     process:              String,
+    // HACK: We honestly (probably) get rid of both of these fields... Or even do away with the
+    // entire Runner struct and just have `fn run(...)` as a free-floating function that takes
+    // either CLI, or the 3 external fields it needs honestly.
     concurrency_limit:    usize,
     limit_total_runnable: usize,
-    sql_file_contents:    String,
 }
 
-impl From<Cli> for Runner {
+impl TryFrom<&Cli> for Runner {
+    type Error = String;
+
     #[inline]
-    fn from(cli: Cli) -> Self {
-        Runner {
-            process:              cli.process().to_string(),
-            concurrency_limit:    cli.concurrency_limit(),
-            limit_total_runnable: cli.limit_total_runnable(),
-            sql_file_contents:    cli.serialize_sql_file().unwrap_or("bots.sql".to_string()),
-        }
+    fn try_from(cli: &Cli) -> std::result::Result<Self, Self::Error> {
+        Ok(Self {
+            process:              cli.process.clone(),
+            concurrency_limit:    cli.concurrency_limit,
+            limit_total_runnable: cli.limit_total_runnable,
+        })
     }
 }
 
@@ -31,21 +34,23 @@ impl Runner {
     /// # Errors
     /// Can fail if any step in the process encounters an error.
     /// We do our best-effort to recover, and failing that we log the error and continue.
-    pub async fn run(&self) -> Result<()> {
+    ///
+    /// # Panics
+    /// Panics if the SQL file cannot be read, as this is a critical failure that prevents the runner from functioning.
+    pub async fn run<S>(&self, sql_file_content: S) -> Result<()>
+    where
+        S: AsRef<str> + Send + 'static,
+    {
         info!("->> {:<12}", "RUN:: Starting run");
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-
-        // Serialize the sql file to a string
-        let sql_file_contents = self.sql_file_contents.clone();
 
         let limit_total_runnable = self.limit_total_runnable;
 
         // Spawn a task to fetch the bots from the database,
         let query_handle = tokio::spawn(async move {
-            // let tx = tx.clone();
             info!("->> {:<12}", "RUN::  Querying database...");
-            bulk_runner_query::query_database(tx, sql_file_contents, limit_total_runnable).await;
+            bulk_runner_query::query_database(tx, sql_file_content, limit_total_runnable).await;
         });
 
         // As the query runs, it will return back a Bot (which will have been filled already, we need the Bot to go to next step)
@@ -67,11 +72,13 @@ impl Runner {
         })
         .await?;
 
+        let process = Box::leak(Box::new(self.process.clone()));
+
         let dispatchable: Dispatchable = futures::future::join_all(future_bots)
             .await
             .into_iter()
             .filter_map(|bot| bot.0)
-            .map(|bot| Packet::new(bot, self.process.clone()))
+            .map(|bot| Packet::new(bot, process.to_owned()))
             .collect::<Dispatchable>();
 
         query_handle.await?;

@@ -14,12 +14,11 @@ pub use crate::base_bot_dispatch::dispatch;
 #[allow(unused_imports)]
 pub use crate::bot_output::BotOutput;
 pub use crate::bot_types::{BotStatus, BotStatusNotReady, BotStatusReady};
-pub use crate::error::Error;
-pub type Result<T> = std::result::Result<T, Error>;
-
-pub struct W<T>(pub T);
-
-// Need Result & Error types
+//
+pub use crate::error::Error as BulkRunnerBotsError;
+pub type Result<T> = std::result::Result<T, BulkRunnerBotsError>;
+#[allow(unused_imports)]
+pub(crate) use crate::error::Error;
 
 pub static DEFAULT_EXE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     PathBuf::from("C:\\Program Files\\Blue Prism Limited\\Blue Prism Automate\\automatec.exe")

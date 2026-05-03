@@ -3,9 +3,6 @@ pub enum Error {
     #[error("Generic error handler: {0}")]
     Generic(String),
 
-    // #[error("AutomateC error: {0}")]
-    // AutomateC(#[from] crate::internals::Error),
-    //
     #[error("Tokio error: {0}")]
     Tokio(#[from] tokio::task::JoinError),
 
@@ -25,7 +22,7 @@ pub enum Error {
     Parse(#[from] std::string::FromUtf8Error),
 
     #[error("Bulk Runner Bots failure in query specific crate!: {0}")]
-    BulkRunnerBots(#[from] bulk_runner_bots::Error),
+    BulkRunnerBots(#[from] bulk_runner_bots::BulkRunnerBotsError),
 
     #[error("Tokio Join error: {0}")]
     TokioJoinError(tokio::task::JoinError),

@@ -1,19 +1,25 @@
-use bulk_runner_rs::{cli, error, info, Runner, TimeKeeper, TracingSubscriber};
-pub use bulk_runner_rs::{Error, Result, W};
+use bulk_runner_rs::{Runner, TimeKeeper, TracingSubscriber};
+use tracing::{error, info};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> bulk_runner_rs::Result<()> {
     let timekeep = TimeKeeper::default();
-    let cli = cli::Cli::new_with_checks()?;
-    init_logger(cli.verbosity_level().into()).init();
+    let cli = bulk_runner_rs::cli::Cli::new()?;
+    init_logger(cli.verbosity_level.into()).init();
 
     info!("->> {:<12}", "MAIN:: 1. Starting bulk_runner_rs... ");
     info!("->> {:<12}", "MAIN:: 2. Cli initialized... ");
 
-    if let Err(e) = Runner::from(cli).run().await {
-        error!("->> {:<12} - {}", "MAIN:: 3. Error running cli... ", e);
-        std::process::exit(1);
-    }
+    let sql_file_contents = bulk_runner_rs::cli::read_sql_file(&cli.sql_file)
+        .map_err(|e| error!("->> {:<12} {}", "MAIN::  Failed to read SQL file: ", e))
+        .expect("Failed to read SQL file");
+
+    Runner::try_from(&cli)
+        .expect("Failed to initialize Runner from CLI arguments")
+        .run(sql_file_contents)
+        .await
+        .map_err(|e| error!("->> {:<12} {}", "MAIN:: 4. Runner failed to run: ", e))
+        .ok();
 
     timekeep.print_elapsed();
     timekeep.print_started_at();

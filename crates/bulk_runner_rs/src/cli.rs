@@ -37,7 +37,7 @@ pub struct Cli {
     /// And is looked for in the current working directory of the binary.
     #[arg(short = 'f', long = "file", help = "The path to the SQL file.", required = false, default_value = "bots.sql", value_hint = clap::ValueHint::FilePath
     )]
-    sql_file: Option<PathBuf>,
+    pub sql_file: PathBuf,
 
     /// Optional verbosity level of the logger.
     /// You may provide this as either a string or a number.
@@ -46,7 +46,7 @@ pub struct Cli {
     /// Most verbose as 4 (Trace -> Trace Everything
     /// If not provided, the default value is "INFO".
     #[arg(value_enum, name = "verbosity", short = 'v', long = "verbosity", help = "The verbosity level of the logger.", required = false, default_value = "INFO", value_hint = clap::ValueHint::Other)]
-    pub verbosity_level: Option<VerbosityLevel>,
+    pub verbosity_level: VerbosityLevel,
 
     /// Optional span level of the logger.
     /// You may provide this as either a string or a number.
@@ -58,7 +58,14 @@ pub struct Cli {
     /// -> "ENTER" (2) - Only log when entering a span.
     /// -> "FULL" (3) - Log both entering and exiting a span.
     #[arg(value_enum, name = "span", short = 's', long = "span", help = "The span level of the logger.", required = false, default_value = "NONE", value_hint = clap::ValueHint::Other)]
-    pub span_type: Option<SpanType>,
+    pub span_type: SpanType,
+}
+
+impl AsRef<VerbosityLevel> for Cli {
+    #[inline]
+    fn as_ref(&self) -> &VerbosityLevel {
+        &self.verbosity_level
+    }
 }
 
 /// The verbosity level of the logger.
@@ -95,12 +102,19 @@ pub enum SpanType {
 
 impl Default for Cli {
     fn default() -> Self {
-        Self::new()
+        Self::new().unwrap_or_else(|e| {
+            eprintln!("Error initializing CLI: {e}");
+            std::process::exit(1);
+        })
     }
 }
 
 impl Cli {
     /// Create a new instance of the Cli struct.
+    /// Parses a new `Cli` instance and performs necessary environment checks.
+    /// `check_automate_exists` is checked regardless,
+    /// and `check_db_vars_exist` (on unix systems)
+    /// are called.
     ///
     /// # Notes:
     /// This will check if the `AutomateC` executable exists at the path specified in the prelude.
@@ -109,22 +123,12 @@ impl Cli {
     /// There is a bypass for this check, which can be set by setting the environment variable `BYPASS_AUTOMATEC_CHECK`.
     ///
     /// This is useful for testing purposes.
-    #[must_use]
-    #[inline]
-    pub fn new() -> Self {
-        Self::parse()
-    }
-
-    /// Parses a new `Cli` instance and performs necessary environment checks.
-    /// `check_automate_exists` is checked regardless,
-    /// and `check_db_vars_exist` (on unix systems)
-    /// are called.
-    ///
     /// # Errors
     /// Returns an error if the `AutomateC` executable does not exist at the specified path,
     /// Returns an error if the necessary DB environment variables are not set (on unix systems).
-    pub fn new_with_checks() -> Result<Self> {
-        let cli = Self::new();
+    #[inline]
+    pub fn new() -> Result<Self> {
+        let cli = Self::parse();
 
         #[cfg(not(unix))]
         #[cfg(windows)]
@@ -136,60 +140,30 @@ impl Cli {
 
         Ok(cli)
     }
+}
 
-    #[must_use]
-    #[inline]
-    pub fn process(&self) -> &str {
-        &self.process
-    }
+/// 'Serializes' the SQL file into a single line string.
+/// This is done by converting to utf-8 and replacing newlines with spaces.
+/// SQL itself does not care about newlines, so this is safe to do in this context.
+///
+/// # Errors
+/// Has the possibility to error if the file cannot be read,
+/// can also fail if the file is not valid utf-8.
+pub fn read_sql_file<P: AsRef<std::path::Path>>(sql_file: P) -> Result<String> {
+    info!("SERIALIZE:: Starting serialization...");
+    let buffer = std::fs::read(sql_file.as_ref()).map_err(|e| {
+        Error::Generic(format!(
+            "Failed to read SQL file at path: {:?} with error: {}",
+            sql_file.as_ref().display(),
+            e
+        ))
+    })?;
 
-    #[must_use]
-    #[inline]
-    pub fn concurrency_limit(&self) -> usize {
-        self.concurrency_limit
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn limit_total_runnable(&self) -> usize {
-        self.limit_total_runnable
-    }
-
-    /// Retrieves the SQL file path.
-    ///
-    /// # Panics
-    /// Function will panic if the SQL file path is not set.
-    #[must_use]
-    #[inline]
-    pub fn sql_file(&self) -> &PathBuf {
-        // self.sql_file.as_ref().unwrap()
-        self.sql_file
-            .as_ref()
-            .expect("SQL file path should have a default value")
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn verbosity_level(&self) -> VerbosityLevel {
-        self.verbosity_level.unwrap_or(VerbosityLevel::Info)
-    }
+    let sql_file_query = String::from_utf8(buffer)?.replace('\n', " ");
+    Ok(sql_file_query)
 }
 
 impl Cli {
-    /// 'Serializes' the SQL file into a single line string.
-    /// This is done by converting to utf-8 and replacing newlines with spaces.
-    /// SQL itself does not care about newlines, so this is safe to do in this context.
-    ///
-    /// # Errors
-    /// Has the possibility to error if the file cannot be read,
-    /// can also fail if the file is not valid utf-8.
-    pub fn serialize_sql_file(&self) -> Result<String> {
-        info!("SERIALIZE:: Starting serialization...");
-        let buffer = std::fs::read(self.sql_file())?;
-        let sql_file_query = String::from_utf8(buffer)?.replace('\n', " ");
-        Ok(sql_file_query)
-    }
-
     /// Runs a check to see if the `AutomateC` executable exists at the specified path.
     ///
     /// # Errors
@@ -214,28 +188,41 @@ impl Cli {
     #[cfg(not(windows))]
     #[cfg(unix)]
     #[inline]
+    #[rustfmt::skip]
     pub fn check_db_vars_exist(self) -> Result<Self> {
-        let (user, password) =
-            (bulk_runner_query::sql_user_from_env(), bulk_runner_query::sql_password_from_env());
+        use bulk_runner_query::DbInfo;
 
-        // Guard clause to manage both || (user | password) not being set
-        if user.is_err() || password.is_err() {
-            // Narrow the error cause to provide feedback on what exactly is missing
-            if let Err(e) = user {
-                error!("DB VAR CHECK:: Failed to get SQL user from env: {}", e);
-                return Err(Error::DbEnvVarUserNotSet);
+        match DbInfo::auth_from_env() {
+            Ok(_) => {
+                Ok(self)
+            },
+            Err(e) => {
+                error!("DB VAR CHECK:: Failed to get DB info from env: {}", e);
+                Err(Error::DbEnvVarsNotSet)
             }
-
-            // Narrow the error cause to provide feedback on what exactly is missing
-            if let Err(e) = password {
-                error!("DB VAR CHECK:: Failed to get SQL password from env: {}", e);
-                return Err(Error::DbEnvVarPasswordNotSet);
-            }
-
-            return Err(Error::DbEnvVarsNotSet);
         }
 
-        Ok(self)
+        // match (
+        //     std::env::var("PROD_SQL_USER"),
+        //     std::env::var("PROD_SQL_PASSWORD"),
+        //     // bulk_runner_query::sql_user_from_env(),
+        //     // bulk_runner_query::sql_password_from_env(),
+        // ) {
+        //     (Err(user_err), Err(pass_err)) => {
+        //         error!("DB VAR CHECK:: Failed to get SQL user from env: {}", user_err);
+        //         error!("DB VAR CHECK:: Failed to get SQL password from env: {}", pass_err);
+        //         Err(Error::DbEnvVarsNotSet)
+        //     }
+        //     (Err(e), _) => {
+        //         error!("DB VAR CHECK:: Failed to get SQL user from env: {}", e);
+        //         Err(Error::DbEnvVarUserNotSet)
+        //     }
+        //     (_, Err(e)) => {
+        //         error!("DB VAR CHECK:: Failed to get SQL password from env: {}", e);
+        //         Err(Error::DbEnvVarPasswordNotSet)
+        //     }
+        //     (Ok(_), Ok(_)) => Ok(self),
+        // }
     }
 }
 
@@ -261,8 +248,10 @@ impl From<u8> for VerbosityLevel {
             2 => VerbosityLevel::Info,
             3 => VerbosityLevel::Debug,
             4 => VerbosityLevel::Trace,
-            _ => unreachable!("You've supplied an invalid verbosity level."),
-            // _ => VerbosityLevel::Info,
+            _ => {
+                println!("You've supplied an invalid verbosity level: {level}. Defaulting to INFO.");
+                VerbosityLevel::Info
+            }
         }
     }
 }
@@ -303,8 +292,10 @@ impl From<u8> for SpanType {
             1 => SpanType::Exit,
             2 => SpanType::Enter,
             3 => SpanType::Full,
-            _ => unreachable!("You've supplied an invalid span type."),
-            // _ => SpanType::None,
+            _ => {
+                println!("You've supplied an invalid span type: {level}. Defaulting to NONE.");
+                SpanType::None
+            }
         }
     }
 }

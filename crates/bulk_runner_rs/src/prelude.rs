@@ -9,9 +9,6 @@ pub use crate::error::Error;
 // in-crate result type
 pub type Result<T> = std::result::Result<T, Error>;
 
-// Wrapper struct
-pub struct W<T>(pub T);
-
 pub static DEFAULT_QUERY_FILE: &str = "bots.sql";
 
 pub static PROD_HOST: &str = "PRDLGDB2";

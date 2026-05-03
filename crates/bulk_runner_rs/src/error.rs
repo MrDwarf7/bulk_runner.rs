@@ -6,9 +6,6 @@ pub enum Error {
     #[error("The AutomateC binary that is required to run this application couldn't be found!")]
     AutomateCNotFound,
 
-    // #[error("AutomateC error: {0}")]
-    // AutomateC(#[from] crate::internals::Error),
-    //
     #[error("Tokio error: {0}")]
     Tokio(#[from] tokio::task::JoinError),
 
@@ -28,7 +25,7 @@ pub enum Error {
     Parse(#[from] std::string::FromUtf8Error),
 
     #[error("Bulk runner query error in binary: {0}")]
-    BulkRunnerQuery(#[from] bulk_runner_query::Error),
+    BulkRunnerQuery(#[from] bulk_runner_query::BulkRunnerQueryError),
 
     #[cfg(not(windows))]
     #[cfg(unix)]

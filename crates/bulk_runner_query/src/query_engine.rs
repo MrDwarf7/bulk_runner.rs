@@ -10,33 +10,6 @@ pub struct QueryEngine {
     pub(crate) pool: Pool,
 }
 
-#[cfg(windows)]
-#[cfg(not(unix))]
-impl Default for QueryEngine {
-    /// Assembled a default `DBInfo` struct, and then creates a `QueryEngine` from it
-    ///
-    /// # Panics
-    ///
-    /// Panics if the `QueryEngine` cannot be created or the `DBInfo` cannot be created
-    fn default() -> Self {
-        QueryEngine::new(DbInfo::default()).expect("Failed to create QueryEngine")
-    }
-}
-
-#[cfg(not(windows))]
-#[cfg(unix)]
-impl Default for QueryEngine {
-    /// Assembled a default `DBInfo` struct, and then creates a `QueryEngine` from it
-    ///
-    /// # Panics
-    ///
-    /// Panics if the `QueryEngine` cannot be created or the `DBInfo` cannot be created
-    fn default() -> Self {
-        QueryEngine::new(DbInfo::auth_from_env().expect("Failed to create DbInfo from env"))
-            .expect("Failed to create QueryEngine")
-    }
-}
-
 impl QueryEngine {
     pub(crate) fn new(db_info: DbInfo) -> Result<Self> {
         let pool = Manager::new()
@@ -76,9 +49,6 @@ impl QueryEngine {
             .map(BaseBot::from)
             .collect::<Vec<BaseBot>>())
     }
-
-    // Add pub methods here to access the run_query method
-    // returned data will likely need to impl From<Row> for YourStruct
 }
 
 #[async_trait::async_trait]

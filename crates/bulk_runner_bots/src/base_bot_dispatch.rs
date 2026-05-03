@@ -67,24 +67,6 @@ async fn spawn_child_proc(
     })
     .await
     .unwrap();
-
-    // .unwrap()
-    // .await;
-    // .expect("Failed to wait on child");
-
-    // info!("Before match output");
-
-    // let output = match output {
-    //     Ok(o) => {
-    //         info!("->> {:<12} - {}", "DISPATCH:: OK", "Task dispatched!");
-    //         o
-    //     }
-    //     Err(e) => return error!("->> {:<12} - Tried to run {cmd_for_print:?} - {e}", "DISPATCH:: ERR"),
-    // };
-
-    // tx_stop.send(output).unwrap();
-    // })
-    // .await
 }
 
 enum CheckStatus {
